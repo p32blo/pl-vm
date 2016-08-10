@@ -1,6 +1,5 @@
 
 use std::io;
-use std::fmt;
 use std::path::Path;
 use std::fs::File;
 use std::io::Read;
@@ -12,6 +11,16 @@ enum Operand {
     Float(f32),
     Address(usize),
 }
+
+impl Operand {
+    fn add(n: Self, a: Self) -> Self {
+        match (n, a) {
+            (Operand::Integer(n), Operand::Address(a)) => Operand::Address((a as i32 + n) as usize),
+            _ => panic!("Invalid Operation"),
+        }
+    }
+}
+
 
 #[derive(Debug,Default)]
 struct Machine {
@@ -64,7 +73,9 @@ impl Machine {
             match inst.as_ref() {
                 "pushi" => self.pushi(&val.unwrap()),
                 "pushn" => self.pushn(&val.unwrap()),
+                "pushgp" => self.pushgp(),
                 "start" => self.start(),
+                "padd" => self.padd(),
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
         }
@@ -88,10 +99,24 @@ impl Machine {
         }
     }
 
+    fn push_reg(&mut self, addr: usize) {
+        self.stack.push(Operand::Address(addr));
+        self.sp += 1;
+    }
+
+    fn pushgp(&mut self) {
+        let gp = self.gp;
+        self.push_reg(gp);
+    }
+
     fn start(&self) {}
 
     fn label(&mut self, mat: &str, pc: usize) {
         self.labels.insert(mat.to_string(), pc);
+    }
+
+    fn padd(&mut self) {
+        Operand::add(self.stack.pop().unwrap(), self.stack.pop().unwrap());
     }
 }
 
