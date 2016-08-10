@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::Read;
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum Operand {
     Integer(i32),
     Float(f32),
@@ -38,6 +38,8 @@ struct Machine {
     call_stack: Vec<(usize, usize)>,
     /// Code
     code: Vec<String>,
+    /// String stack
+    strings: Vec<String>,
     /// Label Map
     labels: HashMap<String, usize>,
 }
@@ -65,7 +67,6 @@ impl Machine {
     fn run_instruction(&mut self) {
         let (inst, val) = self.get_instruction();
 
-
         if inst.contains(":") {
             let pc = self.pc;
             self.label(&inst, pc);
@@ -73,8 +74,11 @@ impl Machine {
             match inst.as_ref() {
                 "pushi" => self.pushi(&val.unwrap()),
                 "pushn" => self.pushn(&val.unwrap()),
+                "pushg" => self.pushg(&val.unwrap()),
+                "pushs" => self.pushs(&val.unwrap()),
                 "pushgp" => self.pushgp(),
                 "start" => self.start(),
+                "writes" => self.writes(),
                 "padd" => self.padd(),
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
@@ -84,9 +88,17 @@ impl Machine {
 
     fn get_instruction(&self) -> (String, Option<String>) {
         let ref inst = self.code[self.pc];
-        let mut split = inst.split_whitespace().map(|x| x.to_string());
-        (split.next().unwrap(), split.next())
+
+        let find = inst.find(" ");
+        match find {
+            None => (inst.to_string(), None),
+            Some(f) => {
+                let (inst, val) = inst.split_at(f);
+                (inst.to_string(), Some(val.trim().to_string()))
+            }
+        }
     }
+
 
     fn pushi(&mut self, val: &str) {
         self.stack.push(Operand::Integer(val.parse().unwrap()));
@@ -109,14 +121,41 @@ impl Machine {
         self.push_reg(gp);
     }
 
+    fn pushg(&mut self, val: &str) {
+        let val: usize = val.parse().unwrap();
+        let addr = self.gp + val;
+        let value = self.stack[addr];
+
+        self.stack.push(value);
+        self.sp += 1;
+    }
+
+    fn pushs(&mut self, val: &str) {
+        let mut val = val.to_string();
+        val.remove(0);
+        val.pop().unwrap();
+        self.strings.push(val);
+        self.stack.push(Operand::Address(self.strings.len() - 1));
+    }
+
     fn start(&self) {}
+
+    fn writes(&mut self) {
+        match &self.stack.pop().unwrap() {
+            &Operand::Address(addr) => println!("{}", self.strings[addr]),
+            _ => panic!("Must be address to write string"),
+        }
+    }
 
     fn label(&mut self, mat: &str, pc: usize) {
         self.labels.insert(mat.to_string(), pc);
     }
 
     fn padd(&mut self) {
-        Operand::add(self.stack.pop().unwrap(), self.stack.pop().unwrap());
+        let n = self.stack.pop().unwrap();
+        let a = self.stack.pop().unwrap();
+        self.stack.push(Operand::add(n, a));
+        self.sp -= 1;
     }
 }
 
