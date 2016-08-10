@@ -38,18 +38,38 @@ impl Machine {
         let mut f = try!(File::open(path));
         let mut buffer = String::new();
         try!(f.read_to_string(&mut buffer));
-        self.code = buffer.lines().map(|x| x.to_string()).collect::<Vec<String>>();
+        self.code = buffer.lines().map(|x| x.trim().to_string()).collect::<Vec<String>>();
         Ok(())
     }
 
-    fn run_instruction() {}
+    fn run(&self) {
+        loop {
+            self.run_instruction();
+            println!("{:#?}", *self);
+        }
+    }
+
+    fn run_instruction(&self) {
+        let (inst, val) = self.get_instruction();
+
+        match inst {
+            _ => panic!(format!("Instruction not found: {}", inst))
+        }
+    }
+
+    fn get_instruction(&self) -> (String, String) {
+        let ref inst = self.code[self.pc];
+        let mut split = inst.split_whitespace().map(|x| x.to_string());
+        (split.next().unwrap(), split.next().unwrap())
+    }
 }
 
 
 pub fn start<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let mut m = Machine::new();
     try!(m.load(path));
-    println!("{:#?}", m);
+    //println!("{:#?}", m);
+    m.run();
     Ok(())
 }
 
