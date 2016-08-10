@@ -60,7 +60,7 @@ impl Machine {
     fn run(&mut self) {
         loop {
             self.run_instruction();
-            println!("{:#?}", *self);
+            println!("inst: <{}>\n{:#?}", self.code[self.pc], *self);
         }
     }
 
@@ -79,6 +79,8 @@ impl Machine {
                 "pushgp" => self.pushgp(),
                 "start" => self.start(),
                 "writes" => self.writes(),
+                "read" => self.read(),
+                "atoi" => self.atoi(),
                 "padd" => self.padd(),
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
@@ -143,8 +145,31 @@ impl Machine {
     fn writes(&mut self) {
         match &self.stack.pop().unwrap() {
             &Operand::Address(addr) => println!("{}", self.strings[addr]),
-            _ => panic!("Must be address to write string"),
+            _ => panic!("writes: Must be address to write string"),
         }
+        self.sp -= 1;
+    }
+
+    fn read(&mut self) {
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+        self.strings.push(input.trim().to_string());
+        self.stack.push(Operand::Address(self.strings.len() - 1));
+        self.sp += 1;
+    }
+
+    fn atoi(&mut self) {
+        let str = match &self.stack.pop().unwrap() {
+            &Operand::Address(addr) => self.strings.remove(addr),
+            _ => panic!("atoi: Must be address to write string"),
+        };
+        self.sp -= 1;
+
+        if let Err(_) = str.parse::<usize>() {
+            panic!("Not a valid number");
+        }
+        self.pushi(&str);
+
     }
 
     fn label(&mut self, mat: &str, pc: usize) {
