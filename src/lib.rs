@@ -70,14 +70,14 @@ impl Machine {
         loop {
             self.run_instruction();
             // println!("{:#?}", *self);
-           // io::stdin().read_line(&mut String::new()).unwrap();
+            // io::stdin().read_line(&mut String::new()).unwrap();
         }
     }
 
     fn run_instruction(&mut self) {
         let (mut inst, val) = self.get_instruction();
 
-      // println!("instr: <{:?}>", (&inst, &val));
+        // println!("instr: <{:?}>", (&inst, &val));
 
         if inst.contains(":") {
             let pc = self.pc;
@@ -167,7 +167,9 @@ impl Machine {
     }
 
     fn start(&self) {}
-    fn stop(&self) { std::process::exit(0); }
+    fn stop(&self) {
+        std::process::exit(0);
+    }
 
     fn loadn(&mut self) {
         let n = self.stack.pop().unwrap();
@@ -178,7 +180,7 @@ impl Machine {
             self.stack.push(v);
         } else {
             panic!("loadn: Not an Address");
-        }   
+        }
     }
 
     fn add(&mut self) {
@@ -190,14 +192,14 @@ impl Machine {
         self.stack.push(val);
     }
 
-    fn writei (&mut self) {
+    fn writei(&mut self) {
         let val = self.stack.pop().unwrap();
         if let Operand::Integer(i) = val {
-            println!("{:?}", i);    
+            println!("{:?}", i);
         } else {
             panic!("writei: Not an Integer");
         }
-        
+
     }
 
     fn writes(&mut self) {
@@ -242,7 +244,7 @@ impl Machine {
     }
 
     fn storeg(&mut self, num: &str) {
-        let n: usize = num.parse().unwrap(); 
+        let n: usize = num.parse().unwrap();
         let val = self.stack.pop().unwrap();
 
         self.stack[self.gp + n] = val;
@@ -254,7 +256,7 @@ impl Machine {
         let a = self.stack.pop().unwrap();
 
         if let Operand::Address(addr) = Operand::add(n, a) {
-            println!("debug: {:?} [{:?}] ({:?}) = {:?}", a, n,addr, v);
+            println!("debug: {:?} [{:?}] ({:?}) = {:?}", a, n, addr, v);
             self.stack[addr] = v;
         } else {
             panic!("storen: Not an Address");
@@ -270,10 +272,10 @@ impl Machine {
 
     fn jz(&mut self, val: &str) {
         let eq = self.stack.pop().unwrap();
-        
+
         match eq {
             Operand::Integer(0) => self.pc = self.labels[val],
-            Operand::Integer(1) => {;}, 
+            Operand::Integer(1) => {}
             _ => panic!("jz: Not an Integer(0|1)"),
         }
     }
