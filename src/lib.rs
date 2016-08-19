@@ -69,7 +69,7 @@ impl Machine {
     fn run(&mut self) {
         loop {
             self.run_instruction();
-            println!("{:#?}", *self);
+            // println!("{:#?}", *self);
            // io::stdin().read_line(&mut String::new()).unwrap();
         }
     }
@@ -77,7 +77,7 @@ impl Machine {
     fn run_instruction(&mut self) {
         let (mut inst, val) = self.get_instruction();
 
-        println!("instr: <{:?}>", (&inst, &val));
+      // println!("instr: <{:?}>", (&inst, &val));
 
         if inst.contains(":") {
             let pc = self.pc;
@@ -91,7 +91,9 @@ impl Machine {
                 "pushs" => self.pushs(&val.unwrap()),
                 "pushgp" => self.pushgp(),
                 "start" => self.start(),
+                "stop" => self.stop(),
                 "loadn" => self.loadn(),
+                "writei" => self.writei(),
                 "writes" => self.writes(),
                 "read" => self.read(),
                 "atoi" => self.atoi(),
@@ -165,6 +167,7 @@ impl Machine {
     }
 
     fn start(&self) {}
+    fn stop(&self) { std::process::exit(0); }
 
     fn loadn(&mut self) {
         let n = self.stack.pop().unwrap();
@@ -185,6 +188,16 @@ impl Machine {
         let val = Operand::add(n, m);
 
         self.stack.push(val);
+    }
+
+    fn writei (&mut self) {
+        let val = self.stack.pop().unwrap();
+        if let Operand::Integer(i) = val {
+            println!("{:?}", i);    
+        } else {
+            panic!("writei: Not an Integer");
+        }
+        
     }
 
     fn writes(&mut self) {
