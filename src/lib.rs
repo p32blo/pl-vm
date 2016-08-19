@@ -16,7 +16,8 @@ impl Operand {
     fn add(n: Self, a: Self) -> Self {
         match (n, a) {
             (Operand::Integer(n), Operand::Address(a)) => Operand::Address((a as i32 + n) as usize),
-            _ => panic!("Invalid Operation"),
+            (Operand::Integer(n), Operand::Integer(a)) => Operand::Integer(n + a),
+            _ => panic!(format!("Invalid Operation: {:?} + {:?}", n, a)),
         }
     }
 }
@@ -87,6 +88,7 @@ impl Machine {
                 "read" => self.read(),
                 "atoi" => self.atoi(),
                 "padd" => self.padd(),
+                "add" => self.add(),
                 "storen" => self.storen(),
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
@@ -163,6 +165,15 @@ impl Machine {
         } else {
             panic!("loadn: Not an Adreess");
         }   
+    }
+
+    fn add(&mut self) {
+        let n = self.stack.pop().unwrap();
+        let m = self.stack.pop().unwrap();
+
+        let val = Operand::add(n, m);
+
+        self.stack.push(val);
     }
 
     fn writes(&mut self) {
