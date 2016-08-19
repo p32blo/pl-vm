@@ -60,15 +60,19 @@ impl Machine {
     fn run(&mut self) {
         loop {
             self.run_instruction();
-            println!("inst: <{}>\n{:#?}", self.code[self.pc], *self);
+            println!("{:#?}", *self);
+           // io::stdin().read_line(&mut String::new()).unwrap();
         }
     }
 
     fn run_instruction(&mut self) {
-        let (inst, val) = self.get_instruction();
+        let (mut inst, val) = self.get_instruction();
+
+        println!("instr: <{:?}>", (&inst, &val));
 
         if inst.contains(":") {
             let pc = self.pc;
+            inst.pop().unwrap();
             self.label(&inst, pc);
         } else {
             match inst.as_ref() {
@@ -82,14 +86,20 @@ impl Machine {
                 "read" => self.read(),
                 "atoi" => self.atoi(),
                 "padd" => self.padd(),
+                "storen" => self.storen(),
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
         }
         self.pc += 1;
     }
 
-    fn get_instruction(&self) -> (String, Option<String>) {
-        let ref inst = self.code[self.pc];
+    fn get_instruction(&mut self) -> (String, Option<String>) {
+        let mut inst: &str = &self.code[self.pc];
+
+        while inst.is_empty() {
+            self.pc += 1;
+            inst = &self.code[self.pc];
+        }
 
         let find = inst.find(" ");
         match find {
@@ -181,6 +191,18 @@ impl Machine {
         let a = self.stack.pop().unwrap();
         self.stack.push(Operand::add(n, a));
         self.sp -= 1;
+    }
+    fn storen(&mut self) {
+        let v = self.stack.pop().unwrap();
+        let n = self.stack.pop().unwrap();
+        let a = self.stack.pop().unwrap();
+
+        if let Operand::Address(addr) = Operand::add(n, a) {
+            println!("debug: {:?} [{:?}] ({:?}) = {:?}", a, n,addr, v);
+            self.stack[addr] = v;
+        } else {
+            panic!("Not a Address");
+        }
     }
 }
 
