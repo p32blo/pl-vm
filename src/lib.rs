@@ -17,7 +17,15 @@ impl Operand {
         match (n, a) {
             (Operand::Integer(n), Operand::Address(a)) => Operand::Address((a as i32 + n) as usize),
             (Operand::Integer(n), Operand::Integer(a)) => Operand::Integer(n + a),
-            _ => panic!(format!("Invalid Operation: {:?} + {:?}", n, a)),
+            _ => panic!(format!("Operand::add => Invalid Operation: {:?} + {:?}", n, a)),
+        }
+    }
+
+    fn equal(n: Self, m: Self) -> Self {
+        match (n, m) {
+            (Operand::Integer(n), Operand::Integer(m)) if n == m => Operand::Integer(1),
+            (Operand::Integer(n), Operand::Integer(m)) => Operand::Integer(0),
+            _ => panic!(format!("Operand::equal => Invalid Operation: {:?} == {:?}", n, m)),
         }
     }
 }
@@ -91,6 +99,7 @@ impl Machine {
                 "add" => self.add(),
                 "storeg" => self.storeg(&val.unwrap()),
                 "storen" => self.storen(),
+                "equal" => self.equal(),
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
         }
@@ -221,7 +230,7 @@ impl Machine {
     fn storeg(&mut self, num: &str) {
         let n: usize = num.parse().unwrap(); 
         let val = self.stack.pop().unwrap();
-        
+
         self.stack[self.gp + n] = val;
     }
 
@@ -236,6 +245,13 @@ impl Machine {
         } else {
             panic!("storen: Not an Address");
         }
+    }
+
+    fn equal(&mut self) {
+        let n = self.stack.pop().unwrap();
+        let m = self.stack.pop().unwrap();
+
+        self.stack.push(Operand::equal(n, m));
     }
 }
 
