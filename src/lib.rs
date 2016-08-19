@@ -89,6 +89,7 @@ impl Machine {
                 "atoi" => self.atoi(),
                 "padd" => self.padd(),
                 "add" => self.add(),
+                "storeg" => self.storeg(&val.unwrap()),
                 "storen" => self.storen(),
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
@@ -163,7 +164,7 @@ impl Machine {
             let v = self.stack[addr];
             self.stack.push(v);
         } else {
-            panic!("loadn: Not an Adreess");
+            panic!("loadn: Not an Address");
         }   
     }
 
@@ -215,6 +216,13 @@ impl Machine {
         let a = self.stack.pop().unwrap();
         self.stack.push(Operand::add(n, a));
         self.sp -= 1;
+    }
+
+    fn storeg(&mut self, num: &str) {
+        let n: usize = num.parse().unwrap(); 
+        let val = self.stack.pop().unwrap();
+        
+        self.stack[self.gp + n] = val;
     }
 
     fn storen(&mut self) {
