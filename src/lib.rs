@@ -100,6 +100,7 @@ impl Machine {
                 "storeg" => self.storeg(&val.unwrap()),
                 "storen" => self.storen(),
                 "equal" => self.equal(),
+                "jz" => self.jz(&val.unwrap()),
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
         }
@@ -252,6 +253,16 @@ impl Machine {
         let m = self.stack.pop().unwrap();
 
         self.stack.push(Operand::equal(n, m));
+    }
+
+    fn jz(&mut self, val: &str) {
+        let eq = self.stack.pop().unwrap();
+        
+        match eq {
+            Operand::Integer(0) => self.pc = self.labels[val],
+            Operand::Integer(1) => {;}, 
+            _ => panic!("jz: Not an Integer(0|1)"),
+        }
     }
 }
 
