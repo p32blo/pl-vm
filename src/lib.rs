@@ -8,7 +8,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Copy)]
 enum Operand {
     Integer(i32),
-    Float(f32),
+   // Float(f32),
     Address(usize),
 }
 
@@ -24,7 +24,7 @@ impl Operand {
     fn equal(n: Self, m: Self) -> Self {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if n == m => Operand::Integer(1),
-            (Operand::Integer(n), Operand::Integer(m)) => Operand::Integer(0),
+            (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
             _ => panic!(format!("Operand::equal => Invalid Operation: {:?} == {:?}", n, m)),
         }
     }
@@ -79,7 +79,7 @@ impl Machine {
 
         // println!("instr: <{:?}>", (&inst, &val));
 
-        if inst.contains(":") {
+        if inst.contains(':') {
             let pc = self.pc;
             inst.pop().unwrap();
             self.label(&inst, pc);
@@ -117,7 +117,7 @@ impl Machine {
             inst = &self.code[self.pc];
         }
 
-        let find = inst.find(" ");
+        let find = inst.find(' ');
         match find {
             None => (inst.to_string(), None),
             Some(f) => {
@@ -203,8 +203,8 @@ impl Machine {
     }
 
     fn writes(&mut self) {
-        match &self.stack.pop().unwrap() {
-            &Operand::Address(addr) => println!("{}", self.strings[addr]),
+        match self.stack.pop().unwrap() {
+            Operand::Address(addr) => println!("{}", self.strings[addr]),
             _ => panic!("writes: Must be address to write string"),
         }
         self.sp -= 1;
@@ -219,8 +219,8 @@ impl Machine {
     }
 
     fn atoi(&mut self) {
-        let str = match &self.stack.pop().unwrap() {
-            &Operand::Address(addr) => self.strings.remove(addr),
+        let str = match self.stack.pop().unwrap() {
+            Operand::Address(addr) => self.strings.remove(addr),
             _ => panic!("atoi: Must be address to write string"),
         };
         self.sp -= 1;
