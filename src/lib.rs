@@ -8,7 +8,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Copy)]
 enum Operand {
     Integer(i32),
-   // Float(f32),
+    // Float(f32),
     Address(usize),
 }
 
@@ -162,11 +162,17 @@ impl Machine {
         let mut val = val.to_string();
         val.remove(0);
         val.pop().unwrap();
-        self.strings.push(val);
-        self.stack.push(Operand::Address(self.strings.len() - 1));
+
+        if let Some(i) = self.strings.iter().position(|x| x == &val) {
+            self.stack.push(Operand::Address(i));
+        } else {
+            self.strings.push(val);
+            self.stack.push(Operand::Address(self.strings.len() - 1));
+        }
     }
 
     fn start(&self) {}
+
     fn stop(&self) {
         std::process::exit(0);
     }
@@ -256,7 +262,6 @@ impl Machine {
         let a = self.stack.pop().unwrap();
 
         if let Operand::Address(addr) = Operand::add(n, a) {
-            println!("debug: {:?} [{:?}] ({:?}) = {:?}", a, n, addr, v);
             self.stack[addr] = v;
         } else {
             panic!("storen: Not an Address");
