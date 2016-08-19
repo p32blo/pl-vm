@@ -82,6 +82,7 @@ impl Machine {
                 "pushs" => self.pushs(&val.unwrap()),
                 "pushgp" => self.pushgp(),
                 "start" => self.start(),
+                "loadn" => self.loadn(),
                 "writes" => self.writes(),
                 "read" => self.read(),
                 "atoi" => self.atoi(),
@@ -152,6 +153,18 @@ impl Machine {
 
     fn start(&self) {}
 
+    fn loadn(&mut self) {
+        let n = self.stack.pop().unwrap();
+        let a = self.stack.pop().unwrap();
+
+        if let Operand::Address(addr) = Operand::add(n, a) {
+            let v = self.stack[addr];
+            self.stack.push(v);
+        } else {
+            panic!("loadn: Not an Adreess");
+        }   
+    }
+
     fn writes(&mut self) {
         match &self.stack.pop().unwrap() {
             &Operand::Address(addr) => println!("{}", self.strings[addr]),
@@ -192,6 +205,7 @@ impl Machine {
         self.stack.push(Operand::add(n, a));
         self.sp -= 1;
     }
+
     fn storen(&mut self) {
         let v = self.stack.pop().unwrap();
         let n = self.stack.pop().unwrap();
@@ -201,7 +215,7 @@ impl Machine {
             println!("debug: {:?} [{:?}] ({:?}) = {:?}", a, n,addr, v);
             self.stack[addr] = v;
         } else {
-            panic!("Not a Address");
+            panic!("storen: Not an Address");
         }
     }
 }
