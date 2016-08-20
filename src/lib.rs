@@ -85,7 +85,25 @@ impl Machine {
         let mut buffer = String::new();
         try!(f.read_to_string(&mut buffer));
         self.code = buffer.lines().map(|x| x.trim().to_lowercase().to_string()).collect();
+
+        for (i, line) in self.code.iter().enumerate() {
+            if Self::is_label(line) {
+                let mut label = line.to_string();
+                label.pop().unwrap();
+                self.labels.insert(label, i);
+            }
+        }
+
         Ok(())
+    }
+
+   fn is_label(line: &str) -> bool {
+        if let Some(inst) = line.split_whitespace().next() {
+            if inst.contains(':') {
+                return true;
+            }
+        }
+        false
     }
 
     fn run(&mut self) {
@@ -97,15 +115,11 @@ impl Machine {
     }
 
     fn run_instruction(&mut self) {
-        let (mut inst, val) = self.get_instruction();
+        let (inst, val) = self.get_instruction();
 
         // println!("instr: <{:?}>", (&inst, &val));
 
-        if inst.contains(':') {
-            let pc = self.pc;
-            inst.pop().unwrap();
-            self.label(&inst, pc);
-        } else {
+        if !Self::is_label(&inst) {
             match inst.as_ref() {
                 "pushi" => self.pushi(&val.unwrap()),
                 "pushn" => self.pushn(&val.unwrap()),
@@ -290,10 +304,6 @@ impl Machine {
         }
         self.pushi(&str);
 
-    }
-
-    fn label(&mut self, mat: &str, pc: usize) {
-        self.labels.insert(mat.to_string(), pc);
     }
 
     fn padd(&mut self) {
