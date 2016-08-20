@@ -21,11 +21,33 @@ impl Operand {
         }
     }
 
+    fn mul(n: Self, m: Self) -> Self {
+        match (n, m) {
+            (Operand::Integer(n), Operand::Integer(m)) => Operand::Integer(n * m),
+            _ => panic!(format!("Operand::mul => Invalid Operation: {:?} * {:?}", n, m)),
+        }
+    }
+
+    fn module(n: Self, m: Self) -> Self {
+        match (n, m) {
+            (Operand::Integer(n), Operand::Integer(m)) => Operand::Integer(m % n),
+            _ => panic!(format!("Operand::mod => Invalid Operation: {:?} * {:?}", m, n)),
+        }
+    }
+
     fn equal(n: Self, m: Self) -> Self {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if n == m => Operand::Integer(1),
             (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
             _ => panic!(format!("Operand::equal => Invalid Operation: {:?} == {:?}", n, m)),
+        }
+    }
+
+    fn supeq(n: Self, m: Self) -> Self {
+        match (n, m) {
+            (Operand::Integer(n), Operand::Integer(m)) if m >= n => Operand::Integer(1),
+            (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
+            _ => panic!(format!("Operand::supeq => Invalid Operation: {:?} >= {:?}", n, m)),
         }
     }
 }
@@ -99,9 +121,13 @@ impl Machine {
                 "atoi" => self.atoi(),
                 "padd" => self.padd(),
                 "add" => self.add(),
+                "mul" => self.mul(),
+                "mod" => self.module(),
                 "storeg" => self.storeg(&val.unwrap()),
                 "storen" => self.storen(),
                 "equal" => self.equal(),
+                "supeq" => self.supeq(),
+                "jump" => self.jump(&val.unwrap()),
                 "jz" => self.jz(&val.unwrap()),
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
@@ -208,6 +234,24 @@ impl Machine {
         self.stack.push(val);
     }
 
+    fn mul(&mut self) {
+        let n = self.stack.pop().unwrap();
+        let m = self.stack.pop().unwrap();
+
+        let val = Operand::mul(n, m);
+
+        self.stack.push(val);
+    }
+
+    fn module(&mut self) {
+        let n = self.stack.pop().unwrap();
+        let m = self.stack.pop().unwrap();
+
+        let val = Operand::module(n, m);
+
+        self.stack.push(val);
+    }
+
     fn writei(&mut self) {
         let val = self.stack.pop().unwrap();
         if let Operand::Integer(i) = val {
@@ -285,11 +329,22 @@ impl Machine {
         self.stack.push(Operand::equal(n, m));
     }
 
+    fn supeq(&mut self) {
+        let n = self.stack.pop().unwrap();
+        let m = self.stack.pop().unwrap();
+
+        self.stack.push(Operand::supeq(n, m));
+    }
+
+    fn jump(&mut self, val: &str) {
+        self.pc = self.labels[val];
+    }
+
     fn jz(&mut self, val: &str) {
         let eq = self.stack.pop().unwrap();
 
         match eq {
-            Operand::Integer(0) => self.pc = self.labels[val],
+            Operand::Integer(0) => self.jump(val),
             Operand::Integer(1) => {}
             _ => panic!("jz: Not an Integer(0|1)"),
         }
