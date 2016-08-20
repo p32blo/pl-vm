@@ -39,7 +39,15 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if n == m => Operand::Integer(1),
             (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::equal => Invalid Operation: {:?} == {:?}", n, m)),
+            _ => panic!(format!("Operand::equal => Invalid Operation: {:?} == {:?}", m, n)),
+        }
+    }
+
+    fn sup(n: Self, m: Self) -> Self {
+        match (n, m) {
+            (Operand::Integer(n), Operand::Integer(m)) if m > n => Operand::Integer(1),
+            (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
+            _ => panic!(format!("Operand::sup => Invalid Operation: {:?} > {:?}", m, n)),
         }
     }
 
@@ -47,7 +55,7 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m >= n => Operand::Integer(1),
             (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::supeq => Invalid Operation: {:?} >= {:?}", n, m)),
+            _ => panic!(format!("Operand::supeq => Invalid Operation: {:?} >= {:?}", m, n)),
         }
     }
 }
@@ -97,7 +105,7 @@ impl Machine {
         Ok(())
     }
 
-   fn is_label(line: &str) -> bool {
+    fn is_label(line: &str) -> bool {
         if let Some(inst) = line.split_whitespace().next() {
             if inst.contains(':') {
                 return true;
@@ -140,6 +148,7 @@ impl Machine {
                 "storeg" => self.storeg(&val.unwrap()),
                 "storen" => self.storen(),
                 "equal" => self.equal(),
+                "sup" => self.sup(),
                 "supeq" => self.supeq(),
                 "jump" => self.jump(&val.unwrap()),
                 "jz" => self.jz(&val.unwrap()),
@@ -337,6 +346,13 @@ impl Machine {
         let m = self.stack.pop().unwrap();
 
         self.stack.push(Operand::equal(n, m));
+    }
+
+    fn sup(&mut self) {
+        let n = self.stack.pop().unwrap();
+        let m = self.stack.pop().unwrap();
+
+        self.stack.push(Operand::sup(n, m));
     }
 
     fn supeq(&mut self) {
