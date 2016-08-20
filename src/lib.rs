@@ -109,12 +109,22 @@ impl Machine {
         self.pc += 1;
     }
 
+    fn remove_comments(inst: &str) -> String {
+        match inst.find("//") {
+            None => inst.to_string(),
+            Some(f) => {
+                let (inst, _) = inst.split_at(f);
+                inst.trim().to_string()
+            }
+        }
+    }
+
     fn get_instruction(&mut self) -> (String, Option<String>) {
-        let mut inst: &str = &self.code[self.pc];
+        let mut inst = Self::remove_comments(&self.code[self.pc]);
 
         while inst.is_empty() {
             self.pc += 1;
-            inst = &self.code[self.pc];
+            inst = Self::remove_comments(&self.code[self.pc]);
         }
 
         let find = inst.find(' ');
