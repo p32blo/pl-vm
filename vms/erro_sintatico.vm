@@ -1,0 +1,18 @@
+		pushi 0	//a
+		pushi 0	//b
+start
+		pushgp
+		pushi 0	//puts on stack the address of a
+		padd
+		pushi 0
+		loadn
+		writei
+		pushgp
+		pushi 1	//puts on stack the address of b
+		padd
+		pushi 0
+		loadn
+		writei
+		pushg 0
+		storeg 0	// store var a
+		err "Error (input file line 8): syntax error"

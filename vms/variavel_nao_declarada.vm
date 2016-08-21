@@ -1,0 +1,5 @@
+		pushi 0	//a
+		pushi 0	//b
+start
+		pushgp
+		err "Error (input file line 4): accessing non declared VAR"

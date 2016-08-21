@@ -1,0 +1,52 @@
+// Universidade do Minho, Dpto Informatica                                      
+// UC Processamento de Linguagens.                                              
+// Maio 2016, Filipe Oliveira                                                   
+//                                                                              
+// Trabalho pratico 2                                                           
+// Exemplo 7.                                                                   
+// testa a ordem correcta de execucao de porcoes de codigo 
+start
+						// +++ CONDITIONAL IF BEGIN +++
+conditional0:
+		pushi 1
+		jz inelse0
+inthen0:
+		pushs "primeiro "	//print string "primeiro "
+		writes
+						// +++ CONDITIONAL IF BEGIN +++
+conditional1:
+		pushi 1
+		jz inelse1
+inthen1:
+		pushs "segundo "	//print string "segundo "
+		writes
+						// +++ CONDITIONAL IF BEGIN +++
+conditional2:
+		pushi 0
+		jz inelse2
+inthen2:
+		pushs "nao deve imprimir "	//print string "nao deve imprimir "
+		writes
+		jump outif2
+inelse2:
+		pushs "terceiro "	//print string "terceiro "
+		writes
+outif2:
+						// --- CONDITIONAL IF END ---
+		pushs "quarto "	//print string "quarto "
+		writes
+		jump outif1
+inelse1:
+		pushs "nao deve imprimir "	//print string "nao deve imprimir "
+		writes
+outif1:
+						// --- CONDITIONAL IF END ---
+		pushs "quinto "	//print string "quinto "
+		writes
+		jump outif0
+inelse0:
+outif0:
+						// --- CONDITIONAL IF END ---
+		pushs "sexto"	//print string "sexto"
+		writes
+stop

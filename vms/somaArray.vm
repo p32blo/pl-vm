@@ -1,0 +1,40 @@
+        pushi 0
+        pushi 0
+        pushn 5
+start
+ciclo:
+        pushgp
+        pushi 2
+        padd
+        pushg 0
+        pushs "introduza um numero inteiro:"
+        writes
+        read
+        atoi
+        storen
+
+        pushg 1
+        pushgp
+        pushi 2
+        padd
+        pushg 0
+        loadn
+        add
+        storeg 1
+
+        pushg 0
+        pushi 1
+        add
+        storeg 0
+
+        pushg 0
+        pushi 5
+        equal
+        jz ciclo
+
+fim:
+        pushs "A soma da lista e: "
+        writes
+        pushg 1
+        writei
+        stop

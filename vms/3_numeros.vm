@@ -1,0 +1,106 @@
+// Universidade do Minho, Dpto Informatica                                      
+// UC Processamento de Linguagens.                                              
+// Maio 2016, Filipe Oliveira                                                   
+//                                                                              
+// Trabalho pratico 2                                                           
+// Exemplo 1.                                                                   
+// lidos 3 numeros, escrever o maior deles 
+		pushi 0	//a
+		pushi 0	//b
+		pushi 0	//c
+start
+		pushs "a:"	//print string "a:"
+		writes
+		read
+		atoi
+		storeg 0	// store var a
+		pushs "b:"	//print string "b:"
+		writes
+		read
+		atoi
+		storeg 1	// store var b
+		pushs "c:"	//print string "c:"
+		writes
+		read
+		atoi
+		storeg 2	// store var c
+		pushs "maior: "	//print string "maior: "
+		writes
+						// +++ CONDITIONAL IF BEGIN +++
+conditional0:
+		pushg 0
+		pushg 1
+		supeq	//relational superior or equal
+		pushg 0
+		pushg 2
+		supeq	//relational superior or equal
+						// +++ Logical AND BEGIN +++
+		mul
+		pushi 2
+		mod
+						// --- Logical AND END ---
+		jz inelse0
+inthen0:
+		pushgp
+		pushi 0	//puts on stack the address of a
+		padd
+		pushi 0
+		loadn
+		writei
+		jump outif0
+inelse0:
+						// +++ CONDITIONAL IF BEGIN +++
+conditional1:
+		pushg 1
+		pushg 0
+		sup	//relational superior
+		pushg 1
+		pushg 2
+		supeq	//relational superior or equal
+						// +++ Logical AND BEGIN +++
+		mul
+		pushi 2
+		mod
+						// --- Logical AND END ---
+		jz inelse1
+inthen1:
+		pushgp
+		pushi 1	//puts on stack the address of b
+		padd
+		pushi 0
+		loadn
+		writei
+		jump outif1
+inelse1:
+// esta condicao era desnecessaria 
+// mas desta forma provamos o correcto aninhamento de condicionais
+						// +++ CONDITIONAL IF BEGIN +++
+conditional2:
+		pushg 2
+		pushg 0
+		sup	//relational superior
+		pushg 2
+		pushg 1
+		sup	//relational superior
+						// +++ Logical AND BEGIN +++
+		mul
+		pushi 2
+		mod
+						// --- Logical AND END ---
+		jz inelse2
+inthen2:
+		pushgp
+		pushi 2	//puts on stack the address of c
+		padd
+		pushi 0
+		loadn
+		writei
+		jump outif2
+inelse2:
+outif2:
+						// --- CONDITIONAL IF END ---
+outif1:
+						// --- CONDITIONAL IF END ---
+outif0:
+						// --- CONDITIONAL IF END ---
+stop

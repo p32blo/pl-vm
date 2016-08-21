@@ -1,0 +1,29 @@
+// declaracao de variavel matriz
+		pushn 8	//matriz_exemplo[2][4] (size 8)
+//associacao de valores inteiros aos indices da matrix
+start
+		pushgp
+		pushi 0	//puts on stack the address of matriz_exemplo
+		padd
+						// +++ Matrix or Vector Dimension Start +++
+		pushi 0
+		pushi 4				//pushes column size of vector or matrix
+		mul
+		pushi 1
+		add		//sums both dimensions
+						// --- Matrix or Vector Dimension End ---
+		pushi 5
+		storen
+		pushgp
+		pushi 0	//puts on stack the address of matriz_exemplo
+		padd
+						// +++ Matrix or Vector Dimension Start +++
+		pushi 1
+		pushi 4				//pushes column size of vector or matrix
+		mul
+		pushi 3
+		add		//sums both dimensions
+						// --- Matrix or Vector Dimension End ---
+		pushi 10
+		storen
+stop

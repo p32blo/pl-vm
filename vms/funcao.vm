@@ -1,0 +1,60 @@
+// Universidade do Minho, Dpto Informatica                                      
+// UC Processamento de Linguagens.                                              
+// Maio 2016, Filipe Oliveira                                                   
+//                                                                              
+// Trabalho pratico 2                                                           
+// Exemplo 6.                                                                   
+// invocar e usar num programa seu uma função 
+		pushi 0	//a
+		pushi 0	//b
+		pushi 0	//aux
+		pushi 0	//resultado
+						// +++ Function Declaration Start +++
+		pushi 0		// space for fucntion maior returned value
+		jump endfunctionmaior
+startfunctionmaior:
+		nop		// no operation
+						// +++ CONDITIONAL IF BEGIN +++
+conditional0:
+		pushg 0
+		pushg 1
+		sup	//relational superior
+		jz inelse0
+inthen0:
+		pushg 0
+		storeg 2	// store var aux
+		jump outif0
+inelse0:
+		pushg 1
+		storeg 2	// store var aux
+outif0:
+						// --- CONDITIONAL IF END ---
+		pushg 2
+		storeg 4	// store returned value of  maior
+		return
+endfunctionmaior:
+						// --- Function Declaration End ---
+start
+		pushs "introduza a: "	//print string "introduza a: "
+		writes
+		read
+		atoi
+		storeg 0	// store var a
+		pushs "introduza b: "	//print string "introduza b: "
+		writes
+		read
+		atoi
+		storeg 1	// store var b
+		pusha startfunctionmaior
+		call
+		pushg 4	// pushes returned value of  maior
+		storeg 3	// store var resultado
+		pushs "maior :"	//print string "maior :"
+		writes
+		pushgp
+		pushi 3	//puts on stack the address of resultado
+		padd
+		pushi 0
+		loadn
+		writei
+stop

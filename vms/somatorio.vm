@@ -1,0 +1,56 @@
+// Universidade do Minho, Dpto Informatica                                      
+// UC Processamento de Linguagens.                                              
+// Maio 2016, Filipe Oliveira                                                   
+//                                                                              
+// Trabalho pratico 2                                                           
+// Exemplo 2.                                                                   
+// Ler N (valor dado) numeros e calcular e imprimir o seu somatorio
+		pushi 0	//qtos_numeros
+		pushi 0	//actual
+		pushi 0	//somatorio
+		pushi 0	//i
+start
+		pushs "quantos numeros?: "	//print string "quantos numeros?: "
+		writes
+		read
+		atoi
+		storeg 0	// store var qtos_numeros
+						// +++ CICLE DO BEGIN +++
+cycle0:	//do
+		pushs "insira numero("	//print string "insira numero("
+		writes
+		pushgp
+		pushi 3	//puts on stack the address of i
+		padd
+		pushi 0
+		loadn
+		writei
+		pushs "): "	//print string "): "
+		writes
+		read
+		atoi
+		storeg 1	// store var actual
+		pushg 2
+		pushg 1
+		add
+		storeg 2	// store var somatorio
+		pushg 3
+		pushi 1
+		add
+		storeg 3	// store var i
+		pushg 3
+		pushg 0
+		inf	//relational inferior
+		jz endcycle0	//while
+		jump cycle0
+endcycle0:
+						// --- CICLE DO END ---
+		pushs " somatorio :"	//print string " somatorio :"
+		writes
+		pushgp
+		pushi 2	//puts on stack the address of somatorio
+		padd
+		pushi 0
+		loadn
+		writei
+stop

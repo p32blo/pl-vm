@@ -1,0 +1,230 @@
+// Universidade do Minho, Dpto Informatica                                      
+// UC Processamento de Linguagens.                                              
+// Maio 2016, Filipe Oliveira                                                   
+//                                                                              
+// Trabalho pratico 2                                                           
+// Exemplo 4.                                                                   
+// ler e armazenar os elementos de um vector de comprimento N
+// imprimir os valores por ordem crescente apos fazer a ordenacao do array
+// por trocas directas
+		pushi 0	//qtos_numeros
+		pushn 25	//auxiliar[25]
+		pushi 0	//i
+		pushi 0	//actual
+		pushi 0	//minimo
+		pushi 0	//localizacao_minimo
+		pushi 0	//aux_troca
+		pushi 0	//pivot
+////////////
+// Inicializacao
+////////////
+start
+		pushi 0
+		storeg 26	// store var i
+		pushs "quantos numeros a ler?: "	//print string "quantos numeros a ler?: "
+		writes
+		read
+		atoi
+		storeg 0	// store var qtos_numeros
+						// +++ CICLE DO BEGIN +++
+cycle0:	//do
+		pushs " insira numero "	//print string " insira numero "
+		writes
+		pushgp
+		pushi 26	//puts on stack the address of i
+		padd
+		pushi 0
+		loadn
+		writei
+		pushs " de "	//print string " de "
+		writes
+		pushgp
+		pushi 0	//puts on stack the address of qtos_numeros
+		padd
+		pushi 0
+		loadn
+		writei
+		pushs ": "	//print string ": "
+		writes
+		read
+		atoi
+		storeg 27	// store var actual
+		pushgp
+		pushi 1	//puts on stack the address of auxiliar
+		padd
+						// +++ Matrix or Vector Dimension Start +++
+		pushg 26
+		pushi 0		//second dimension size of vector(0)
+		add		//sums both dimensions
+						// --- Matrix or Vector Dimension End ---
+		pushg 27
+		storen
+		pushg 26
+		pushi 1
+		add
+		storeg 26	// store var i
+		pushg 26
+		pushg 0
+		inf	//relational inferior
+		jz endcycle0	//while
+		jump cycle0
+endcycle0:
+						// --- CICLE DO END ---
+		pushi 0
+		storeg 26	// store var i
+////////////
+// Ordenacao
+////////////
+						// +++ CICLE DO BEGIN +++
+cycle1:	//do
+		pushgp
+		pushi 1	//puts on stack the address of auxiliar
+		padd
+						// +++ Matrix or Vector Dimension Start +++
+		pushg 26
+		pushi 0		//second dimension size of vector(0)
+		add		//sums both dimensions
+						// --- Matrix or Vector Dimension End ---
+		loadn 
+		storeg 28	// store var minimo
+		pushg 26
+		storeg 31	// store var pivot
+		pushg 26
+		storeg 29	// store var localizacao_minimo
+						// +++ CICLE DO BEGIN +++
+cycle2:	//do
+		pushgp
+		pushi 1	//puts on stack the address of auxiliar
+		padd
+						// +++ Matrix or Vector Dimension Start +++
+		pushg 31
+		pushi 0		//second dimension size of vector(0)
+		add		//sums both dimensions
+						// --- Matrix or Vector Dimension End ---
+		loadn 
+		storeg 27	// store var actual
+						// +++ CONDITIONAL IF BEGIN +++
+conditional0:
+		pushg 27
+		pushg 28
+		inf	//relational inferior
+		jz inelse0
+inthen0:
+		pushg 27
+		storeg 28	// store var minimo
+		pushg 31
+		storeg 29	// store var localizacao_minimo
+		jump outif0
+inelse0:
+outif0:
+						// --- CONDITIONAL IF END ---
+		pushg 31
+		pushi 1
+		add
+		storeg 31	// store var pivot
+		pushg 31
+		pushg 0
+		inf	//relational inferior
+		jz endcycle2	//while
+		jump cycle2
+endcycle2:
+						// --- CICLE DO END ---
+						// +++ CONDITIONAL IF BEGIN +++
+conditional1:
+		pushg 29
+		pushg 26
+						// +++ Logical NOT EQUAL BEGIN +++
+		equal
+		pushi 1
+		add
+		pushi 2
+		mod
+						// --- Logical NOT EQUAL END ---
+		jz inelse1
+inthen1:
+		pushgp
+		pushi 1	//puts on stack the address of auxiliar
+		padd
+						// +++ Matrix or Vector Dimension Start +++
+		pushg 29
+		pushi 0		//second dimension size of vector(0)
+		add		//sums both dimensions
+						// --- Matrix or Vector Dimension End ---
+		loadn 
+		storeg 30	// store var aux_troca
+		pushgp
+		pushi 1	//puts on stack the address of auxiliar
+		padd
+						// +++ Matrix or Vector Dimension Start +++
+		pushg 29
+		pushi 0		//second dimension size of vector(0)
+		add		//sums both dimensions
+						// --- Matrix or Vector Dimension End ---
+		pushgp
+		pushi 1	//puts on stack the address of auxiliar
+		padd
+						// +++ Matrix or Vector Dimension Start +++
+		pushg 26
+		pushi 0		//second dimension size of vector(0)
+		add		//sums both dimensions
+						// --- Matrix or Vector Dimension End ---
+		loadn 
+		storen
+		pushgp
+		pushi 1	//puts on stack the address of auxiliar
+		padd
+						// +++ Matrix or Vector Dimension Start +++
+		pushg 26
+		pushi 0		//second dimension size of vector(0)
+		add		//sums both dimensions
+						// --- Matrix or Vector Dimension End ---
+		pushg 30
+		storen
+		jump outif1
+inelse1:
+outif1:
+						// --- CONDITIONAL IF END ---
+		pushg 26
+		pushi 1
+		add
+		storeg 26	// store var i
+		pushg 26
+		pushg 0
+		inf	//relational inferior
+		jz endcycle1	//while
+		jump cycle1
+endcycle1:
+						// --- CICLE DO END ---
+////////////
+// Impressao
+////////////
+		pushi 0
+		storeg 26	// store var i
+		pushs " #LISTA ORDENADA "	//print string " #LISTA ORDENADA "
+		writes
+						// +++ CICLE DO BEGIN +++
+cycle3:	//do
+		pushgp
+		pushi 1	//puts on stack the address of auxiliar
+		padd
+						// +++ Matrix or Vector Dimension Start +++
+		pushg 26
+		pushi 0		//second dimension size of vector(0)
+		add		//sums both dimensions
+						// --- Matrix or Vector Dimension End ---
+		loadn
+		writei
+		pushs " "	//print string " "
+		writes
+		pushg 26
+		pushi 1
+		add
+		storeg 26	// store var i
+		pushg 26
+		pushg 0
+		inf	//relational inferior
+		jz endcycle3	//while
+		jump cycle3
+endcycle3:
+						// --- CICLE DO END ---
+stop

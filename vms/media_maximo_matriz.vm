@@ -1,0 +1,108 @@
+// Universidade do Minho, Dpto Informatica                                      
+// UC Processamento de Linguagens.                                              
+// Maio 2016, Filipe Oliveira                                                   
+//                                                                              
+// Trabalho pratico 2                                                           
+// Exemplo 5.                                                                   
+// ler e armazenar os elementos de uma matriz NxM 
+// calcular e imprimir a media e maximo dessa matriz
+		pushn 6	//matrix[2][3] (size 6)
+		pushi 0	//coluna_actual
+		pushi 0	//linha_actual
+		pushi 0	//valor_actual
+		pushi 0	//media
+		pushi 0	//maximo
+		pushi 0	//somatorio
+		pushi 0	//numeros_lidos
+start
+						// +++ CICLE DO BEGIN +++
+cycle0:	//do
+						// +++ CICLE DO BEGIN +++
+cycle1:	//do
+		pushs "insira M( "	//print string "insira M( "
+		writes
+		pushgp
+		pushi 7	//puts on stack the address of linha_actual
+		padd
+		pushi 0
+		loadn
+		writei
+		pushs " , "	//print string " , "
+		writes
+		pushgp
+		pushi 6	//puts on stack the address of coluna_actual
+		padd
+		pushi 0
+		loadn
+		writei
+		pushs " ): "	//print string " ): "
+		writes
+		read
+		atoi
+		storeg 8	// store var valor_actual
+						// +++ CONDITIONAL IF BEGIN +++
+conditional0:
+		pushg 8
+		pushg 10
+		sup	//relational superior
+		jz inelse0
+inthen0:
+		pushg 8
+		storeg 10	// store var maximo
+		jump outif0
+inelse0:
+outif0:
+						// --- CONDITIONAL IF END ---
+		pushg 12
+		pushi 1
+		add
+		storeg 12	// store var numeros_lidos
+		pushg 11
+		pushg 8
+		add
+		storeg 11	// store var somatorio
+		pushg 6
+		pushi 1
+		add
+		storeg 6	// store var coluna_actual
+		pushg 6
+		pushi 3
+		inf	//relational inferior
+		jz endcycle1	//while
+		jump cycle1
+endcycle1:
+						// --- CICLE DO END ---
+		pushi 0
+		storeg 6	// store var coluna_actual
+		pushg 7
+		pushi 1
+		add
+		storeg 7	// store var linha_actual
+		pushg 7
+		pushi 2
+		inf	//relational inferior
+		jz endcycle0	//while
+		jump cycle0
+endcycle0:
+						// --- CICLE DO END ---
+		pushg 11
+		pushg 12
+		div
+		storeg 9	// store var media
+		pushs "media: "	//print string "media: "
+		writes
+		pushgp
+		pushi 9	//puts on stack the address of media
+		padd
+		pushi 0
+		loadn
+		writei
+		pushs "maximo: "	//print string "maximo: "
+		writes
+		pushgp
+		pushi 10	//puts on stack the address of maximo
+		padd
+		pushi 0
+		loadn
+		writei
+stop
