@@ -1,15 +1,27 @@
 
 use std::io;
+use std::fmt;
+
 use std::path::Path;
 use std::fs::File;
 use std::io::Read;
+
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 enum Operand {
     Integer(i32),
     // Float(f32),
     Address(usize),
+}
+
+impl fmt::Debug for Operand {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Operand::Integer(i) => write!(f, "{:2}i", i),
+            Operand::Address(a) => write!(f, "{:2}a", a),
+        }
+    }
 }
 
 impl Operand {
@@ -77,7 +89,7 @@ impl Operand {
 }
 
 
-#[derive(Debug,Default)]
+#[derive(Default)]
 struct Machine {
     /// Stack Pointer
     sp: usize,
@@ -90,13 +102,29 @@ struct Machine {
     /// Operand Stack
     stack: Vec<Operand>,
     /// Call Stack (instruction address, frame pointer)
-    call_stack: Vec<(usize, usize)>,
+    // call_stack: Vec<(usize, usize)>,
     /// Code
     code: Vec<String>,
     /// String stack
     strings: Vec<String>,
     /// Label Map
     labels: HashMap<String, usize>,
+}
+
+impl fmt::Debug for Machine {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f, " sp: {:2} |", self.sp));
+        try!(write!(f, " fp: {:2} |", self.fp));
+        try!(write!(f, " pc: {:2} |", self.pc));
+        try!(write!(f, " gp: {:2} |", self.gp));
+
+        try!(write!(f, " stack: "));
+        for val in &self.stack {
+            try!(write!(f, "{:?} ", val));
+        }
+
+        Ok(())
+    }
 }
 
 impl Machine {
@@ -132,13 +160,13 @@ impl Machine {
 
     fn run(&mut self) {
         loop {
-            self.run_instruction();
-            // println!("{:#?}", *self);
+            print!("<{:^8}> ", self.run_instruction());
+            println!("{:?}", *self);
             // io::stdin().read_line(&mut String::new()).unwrap();
         }
     }
 
-    fn run_instruction(&mut self) {
+    fn run_instruction(&mut self) -> String {
         let (inst, val) = self.get_instruction();
 
         // println!("instr: <{:?}>", (&inst, &val));
@@ -174,6 +202,7 @@ impl Machine {
             }
         }
         self.pc += 1;
+        format!("{}", inst)
     }
 
     fn remove_comments(inst: &str) -> String {
