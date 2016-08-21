@@ -43,6 +43,22 @@ impl Operand {
         }
     }
 
+    fn inf(n: Self, m: Self) -> Self {
+        match (n, m) {
+            (Operand::Integer(n), Operand::Integer(m)) if m < n => Operand::Integer(1),
+            (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
+            _ => panic!(format!("Operand::sup => Invalid Operation: {:?} < {:?}", m, n)),
+        }
+    }
+
+    fn infeq(n: Self, m: Self) -> Self {
+        match (n, m) {
+            (Operand::Integer(n), Operand::Integer(m)) if m <= n => Operand::Integer(1),
+            (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
+            _ => panic!(format!("Operand::sup => Invalid Operation: {:?} <= {:?}", m, n)),
+        }
+    }
+
     fn sup(n: Self, m: Self) -> Self {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m > n => Operand::Integer(1),
@@ -148,6 +164,8 @@ impl Machine {
                 "storeg" => self.storeg(&val.unwrap()),
                 "storen" => self.storen(),
                 "equal" => self.equal(),
+                "inf" => self.inf(),
+                "infeq" => self.infeq(),
                 "sup" => self.sup(),
                 "supeq" => self.supeq(),
                 "jump" => self.jump(&val.unwrap()),
@@ -248,33 +266,6 @@ impl Machine {
         }
     }
 
-    fn add(&mut self) {
-        let n = self.stack.pop().unwrap();
-        let m = self.stack.pop().unwrap();
-
-        let val = Operand::add(n, m);
-
-        self.stack.push(val);
-    }
-
-    fn mul(&mut self) {
-        let n = self.stack.pop().unwrap();
-        let m = self.stack.pop().unwrap();
-
-        let val = Operand::mul(n, m);
-
-        self.stack.push(val);
-    }
-
-    fn module(&mut self) {
-        let n = self.stack.pop().unwrap();
-        let m = self.stack.pop().unwrap();
-
-        let val = Operand::module(n, m);
-
-        self.stack.push(val);
-    }
-
     fn writei(&mut self) {
         let val = self.stack.pop().unwrap();
         if let Operand::Integer(i) = val {
@@ -312,14 +303,6 @@ impl Machine {
             panic!("Not a valid number");
         }
         self.pushi(&str);
-
-    }
-
-    fn padd(&mut self) {
-        let n = self.stack.pop().unwrap();
-        let a = self.stack.pop().unwrap();
-        self.stack.push(Operand::add(n, a));
-        self.sp -= 1;
     }
 
     fn storeg(&mut self, num: &str) {
@@ -341,25 +324,49 @@ impl Machine {
         }
     }
 
-    fn equal(&mut self) {
+    fn binary_op<F: FnOnce(Operand, Operand) -> Operand>(&mut self, op: F) {
         let n = self.stack.pop().unwrap();
         let m = self.stack.pop().unwrap();
 
-        self.stack.push(Operand::equal(n, m));
+        let val = op(n, m);
+
+        self.stack.push(val);
+    }
+
+    fn padd(&mut self) {
+        self.binary_op(Operand::add)
+    }
+
+    fn add(&mut self) {
+        self.binary_op(Operand::add)
+    }
+
+    fn mul(&mut self) {
+        self.binary_op(Operand::mul)
+    }
+
+    fn module(&mut self) {
+        self.binary_op(Operand::module)
+    }
+
+    fn equal(&mut self) {
+        self.binary_op(Operand::equal)
+    }
+
+    fn inf(&mut self) {
+        self.binary_op(Operand::inf)
+    }
+
+    fn infeq(&mut self) {
+        self.binary_op(Operand::infeq)
     }
 
     fn sup(&mut self) {
-        let n = self.stack.pop().unwrap();
-        let m = self.stack.pop().unwrap();
-
-        self.stack.push(Operand::sup(n, m));
+        self.binary_op(Operand::sup)
     }
 
     fn supeq(&mut self) {
-        let n = self.stack.pop().unwrap();
-        let m = self.stack.pop().unwrap();
-
-        self.stack.push(Operand::supeq(n, m));
+        self.binary_op(Operand::supeq)
     }
 
     fn jump(&mut self, val: &str) {
