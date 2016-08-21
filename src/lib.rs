@@ -113,16 +113,15 @@ struct Machine {
 
 impl fmt::Debug for Machine {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, " sp: {:2} |", self.sp));
+        try!(write!(f, "| sp: {:2} |", self.sp));
         try!(write!(f, " fp: {:2} |", self.fp));
         try!(write!(f, " pc: {:2} |", self.pc));
         try!(write!(f, " gp: {:2} |", self.gp));
 
-        try!(write!(f, " stack: "));
+        try!(write!(f, "\nstack:\n"));
         for val in &self.stack {
             try!(write!(f, "{:?} ", val));
         }
-
         Ok(())
     }
 }
@@ -136,7 +135,10 @@ impl Machine {
         let mut f = try!(File::open(path));
         let mut buffer = String::new();
         try!(f.read_to_string(&mut buffer));
-        self.code = buffer.lines().map(|x| x.trim().to_lowercase().to_string()).collect();
+        self.code = buffer.lines()
+            .map(|x| Self::remove_comments(&x.trim().to_lowercase()))
+            .filter(|x| !x.is_empty())
+            .collect();
 
         for (i, line) in self.code.iter().enumerate() {
             if Self::is_label(line) {
@@ -159,9 +161,10 @@ impl Machine {
     }
 
     fn run(&mut self) {
+        // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);
         loop {
-            print!("<{:^8}> ", self.run_instruction());
-            println!("{:?}", *self);
+            let _inst = self.run_instruction();
+            // println!("<{:^8}>\n{:?}", _inst, *self);
             // io::stdin().read_line(&mut String::new()).unwrap();
         }
     }
@@ -202,7 +205,7 @@ impl Machine {
             }
         }
         self.pc += 1;
-        format!("{}", inst)
+        inst
     }
 
     fn remove_comments(inst: &str) -> String {
@@ -216,11 +219,11 @@ impl Machine {
     }
 
     fn get_instruction(&mut self) -> (String, Option<String>) {
-        let mut inst = Self::remove_comments(&self.code[self.pc]);
+        let mut inst = &self.code[self.pc];
 
         while inst.is_empty() {
             self.pc += 1;
-            inst = Self::remove_comments(&self.code[self.pc]);
+            inst = &self.code[self.pc];
         }
 
         let find = inst.find(' ');
