@@ -1,4 +1,9 @@
 
+extern crate unescape;
+extern crate ansi_term;
+
+use ansi_term::Colour::Red;
+
 use std::io;
 use std::fmt;
 
@@ -202,7 +207,7 @@ impl Machine {
                 "jump" => self.jump(&val.unwrap()),
                 "jz" => self.jz(&val.unwrap()),
                 "err" => {
-                    println!("{}", Self::remove_quotes(&val.unwrap()));
+                    println!("{}", Red.paint(Self::remove_quotes(&val.unwrap())));
                     std::process::exit(0);
                 }
                 _ => panic!(format!("Instruction not found: {}", inst)),
@@ -221,11 +226,15 @@ impl Machine {
             }
         }
     }
+    
     fn remove_quotes(string: &str) -> String {
         let mut val = string.to_string();
+
+        // Assumes well formed strings with both quotes
         val.remove(0);
         val.pop().unwrap();
-        val
+
+        unescape::unescape(&val).unwrap()
     }
 
 
