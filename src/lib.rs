@@ -185,6 +185,7 @@ impl Machine {
                 "pushn" => self.pushn(&val.unwrap()),
                 "pushg" => self.pushg(&val.unwrap()),
                 "pushs" => self.pushs(&val.unwrap()),
+                "pusha" => self.pusha(&val.unwrap()),
                 "pushgp" => self.pushgp(),
                 "start" => {}
                 "stop" => return Err(()),
@@ -296,6 +297,11 @@ impl Machine {
             self.strings.push(val);
             self.stack.push(Operand::Address(self.strings.len() - 1));
         }
+    }
+
+    fn pusha(&mut self, val: &str) {
+        let addr = self.labels[val];
+        self.stack.push(Operand::Address(addr));
     }
 
     fn loadn(&mut self) {
