@@ -201,6 +201,10 @@ impl Machine {
                 "supeq" => self.supeq(),
                 "jump" => self.jump(&val.unwrap()),
                 "jz" => self.jz(&val.unwrap()),
+                "err" => {
+                    println!("{}", Self::remove_quotes(&val.unwrap()));
+                    std::process::exit(0);
+                }
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
         }
@@ -217,6 +221,13 @@ impl Machine {
             }
         }
     }
+    fn remove_quotes(string: &str) -> String {
+        let mut val = string.to_string();
+        val.remove(0);
+        val.pop().unwrap();
+        val
+    }
+
 
     fn get_instruction(&mut self) -> (String, Option<String>) {
         let mut inst = &self.code[self.pc];
@@ -268,9 +279,7 @@ impl Machine {
     }
 
     fn pushs(&mut self, val: &str) {
-        let mut val = val.to_string();
-        val.remove(0);
-        val.pop().unwrap();
+        let val = Self::remove_quotes(val);
 
         if let Some(i) = self.strings.iter().position(|x| x == &val) {
             self.stack.push(Operand::Address(i));
