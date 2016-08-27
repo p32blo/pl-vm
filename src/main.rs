@@ -1,19 +1,18 @@
 
 extern crate vm;
+extern crate ansi_term;
+use ansi_term::Colour::Blue;
 
 use std::error::Error;
 
 fn main() {
 
-    let mut args = std::env::args().skip(1);
+    let args = std::env::args().skip(1);
 
-    match args.by_ref().len() {
-        1 => {
-            let file = args.next().unwrap();
-            if let Err(e) = vm::start(&file) {
-                println!("error: {}", e.description());
-            }
+    for file in args {
+        let file_col = Blue.paint(file.to_string());
+        if let Err(e) = vm::start(&file) {
+            println!("{}: {}", file_col, e.description());
         }
-        _ => println!("error: no file provided"),
     }
 }

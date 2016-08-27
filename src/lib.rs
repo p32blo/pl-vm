@@ -165,16 +165,16 @@ impl Machine {
         false
     }
 
-    fn run(&mut self) {
+    fn run(&mut self) -> Result<(), ()> {
         // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);
         loop {
-            let _inst = self.run_instruction();
+            let _inst = try!(self.run_instruction());
             // println!("<{:^8}>\n{:?}", _inst, *self);
             // io::stdin().read_line(&mut String::new()).unwrap();
         }
     }
 
-    fn run_instruction(&mut self) -> String {
+    fn run_instruction(&mut self) -> Result<String, ()> {
         let (inst, val) = self.get_instruction();
 
         // println!("instr: <{:?}>", (&inst, &val));
@@ -186,8 +186,8 @@ impl Machine {
                 "pushg" => self.pushg(&val.unwrap()),
                 "pushs" => self.pushs(&val.unwrap()),
                 "pushgp" => self.pushgp(),
-                "start" => self.start(),
-                "stop" => self.stop(),
+                "start" => {}
+                "stop" => return Err(()),
                 "loadn" => self.loadn(),
                 "writei" => self.writei(),
                 "writes" => self.writes(),
@@ -208,13 +208,13 @@ impl Machine {
                 "jz" => self.jz(&val.unwrap()),
                 "err" => {
                     println!("{}", Red.paint(Self::remove_quotes(&val.unwrap())));
-                    std::process::exit(0);
+                    return Err(());
                 }
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
         }
         self.pc += 1;
-        inst
+        Ok(inst)
     }
 
     fn remove_comments(inst: &str) -> String {
@@ -226,7 +226,7 @@ impl Machine {
             }
         }
     }
-    
+
     fn remove_quotes(string: &str) -> String {
         let mut val = string.to_string();
 
@@ -296,12 +296,6 @@ impl Machine {
             self.strings.push(val);
             self.stack.push(Operand::Address(self.strings.len() - 1));
         }
-    }
-
-    fn start(&self) {}
-
-    fn stop(&self) {
-        std::process::exit(0);
     }
 
     fn loadn(&mut self) {
@@ -439,8 +433,7 @@ pub fn start<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let mut m = Machine::new();
     try!(m.load(path));
     // println!("{:#?}", m);
-    m.run();
-    Ok(())
+    m.run().map_err(|_| io::Error::new(io::ErrorKind::Other, "End execution"))
 }
 
 #[cfg(test)]
