@@ -47,10 +47,16 @@ impl Operand {
         }
     }
 
+    fn div(n: Self, m: Self) -> Self {
+        match (n, m) {
+            (Operand::Integer(n), Operand::Integer(m)) => Operand::Integer(m / n),
+            _ => panic!(format!("Operand::div => Invalid Operation: {:?} / {:?}", m, n)),
+        }
+    }
     fn module(n: Self, m: Self) -> Self {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) => Operand::Integer(m % n),
-            _ => panic!(format!("Operand::mod => Invalid Operation: {:?} * {:?}", m, n)),
+            _ => panic!(format!("Operand::mod => Invalid Operation: {:?} % {:?}", m, n)),
         }
     }
 
@@ -169,7 +175,7 @@ impl Machine {
         self.stack.len() - 1
     }
 
-    fn run(&mut self) -> Result<(), ()> {
+    fn run(&mut self) -> io::Result<()> {
         // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);
         loop {
             let _inst = try!(self.run_instruction());
@@ -178,7 +184,7 @@ impl Machine {
         }
     }
 
-    fn run_instruction(&mut self) -> Result<String, ()> {
+    fn run_instruction(&mut self) -> io::Result<String> {
         let (inst, val) = self.get_instruction();
 
         // println!("instr: <{:?}>", (&inst, &val));
@@ -195,15 +201,16 @@ impl Machine {
                 "return" => self.ret(),
                 "start" => {}
                 "nop" => {},
-                "stop" => return Err(()),
+                "stop" => return Err(io::Error::new(io::ErrorKind::Other, "End execution")),
                 "loadn" => self.loadn(),
                 "writei" => self.writei(),
                 "writes" => self.writes(),
-                "read" => self.read(),
-                "atoi" => self.atoi(),
+                "read" => try!(self.read()),
+                "atoi" => try!(self.atoi()),
                 "padd" => self.padd(),
                 "add" => self.add(),
                 "mul" => self.mul(),
+                "div" => self.div(),
                 "mod" => self.module(),
                 "storeg" => self.storeg(&val.unwrap()),
                 "storen" => self.storen(),
@@ -215,9 +222,10 @@ impl Machine {
                 "jump" => self.jump(&val.unwrap()),
                 "jz" => self.jz(&val.unwrap()),
                 "err" => {
-                    print!("\n{}", Red.paint(Self::remove_quotes(&val.unwrap())));
+                    let err = Red.paint(Self::remove_quotes(&val.unwrap()));
+                    print!("\n{}", err);
                     io::stdout().flush().ok().expect("Could not flush stdout");
-                    return Err(());
+                    return Err(io::Error::new(io::ErrorKind::Other, format!("End execution: {}", err)));
                 }
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
@@ -341,23 +349,25 @@ impl Machine {
         }
     }
 
-    fn read(&mut self) {
+    fn read(&mut self) -> io::Result<()> {
         let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
+        try!(io::stdin().read_line(&mut input));
         self.strings.push(input.trim().to_string());
         self.stack.push(Operand::Address(self.strings.len() - 1));
+        Ok(())
     }
 
-    fn atoi(&mut self) {
+    fn atoi(&mut self) -> io::Result<()>{
         let str = match self.stack.pop().unwrap() {
             Operand::Address(addr) => self.strings.remove(addr),
             _ => panic!("atoi: Must be address to write string"),
         };
 
         if let Err(_) = str.parse::<usize>() {
-            panic!("Not a valid number");
+            return Err(io::Error::new(io::ErrorKind::Other, format!("End execution: {}", Red.paint("Not a valid number"))));
         }
         self.pushi(&str);
+        Ok(())
     }
 
     fn storeg(&mut self, num: &str) {
@@ -418,6 +428,10 @@ impl Machine {
         self.binary_op(Operand::mul)
     }
 
+    fn div(&mut self) {
+        self.binary_op(Operand::div)
+    }
+
     fn module(&mut self) {
         self.binary_op(Operand::module)
     }
@@ -462,7 +476,8 @@ pub fn start<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let mut m = Machine::new();
     try!(m.load(path));
     // println!("{:#?}", m);
-    m.run().map_err(|_| io::Error::new(io::ErrorKind::Other, "End execution"))
+    try!(m.run());
+    Ok(())
 }
 
 #[cfg(test)]
