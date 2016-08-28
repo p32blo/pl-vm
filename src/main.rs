@@ -12,7 +12,7 @@ fn main() {
     for file in args {
         let file_col = Blue.paint(file.to_string());
         if let Err(e) = vm::start(&file) {
-            println!("{}: {}", file_col, e.description());
+            println!("\n{}: {}", file_col, e.description());
         }
     }
 }

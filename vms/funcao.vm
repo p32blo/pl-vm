@@ -49,7 +49,7 @@ start
 		call
 		pushg 4	// pushes returned value of  maior
 		storeg 3	// store var resultado
-		pushs "maior :"	//print string "maior :"
+		pushs "maior: "	//print string "maior :"
 		writes
 		pushgp
 		pushi 3	//puts on stack the address of resultado

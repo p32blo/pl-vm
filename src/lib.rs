@@ -5,6 +5,8 @@ extern crate ansi_term;
 use ansi_term::Colour::Red;
 
 use std::io;
+use std::io::Write;
+
 use std::fmt;
 
 use std::path::Path;
@@ -190,7 +192,9 @@ impl Machine {
                 "pusha" => self.pusha(&val.unwrap()),
                 "pushgp" => self.pushgp(),
                 "call" => self.call(),
+                "return" => self.ret(),
                 "start" => {}
+                "nop" => {},
                 "stop" => return Err(()),
                 "loadn" => self.loadn(),
                 "writei" => self.writei(),
@@ -211,7 +215,8 @@ impl Machine {
                 "jump" => self.jump(&val.unwrap()),
                 "jz" => self.jz(&val.unwrap()),
                 "err" => {
-                    println!("{}", Red.paint(Self::remove_quotes(&val.unwrap())));
+                    print!("\n{}", Red.paint(Self::remove_quotes(&val.unwrap())));
+                    io::stdout().flush().ok().expect("Could not flush stdout");
                     return Err(());
                 }
                 _ => panic!(format!("Instruction not found: {}", inst)),
@@ -318,7 +323,8 @@ impl Machine {
     fn writei(&mut self) {
         let val = self.stack.pop().unwrap();
         if let Operand::Integer(i) = val {
-            println!("{:?}", i);
+            print!("{:?}", i);
+            io::stdout().flush().ok().expect("Could not flush stdout");
         } else {
             panic!("writei: Not an Integer");
         }
@@ -327,7 +333,10 @@ impl Machine {
 
     fn writes(&mut self) {
         match self.stack.pop().unwrap() {
-            Operand::Address(addr) => println!("{}", self.strings[addr]),
+            Operand::Address(addr) => {
+                print!("{}", self.strings[addr]); 
+                io::stdout().flush().ok().expect("Could not flush stdout");
+            },
             _ => panic!("writes: Must be address to write string"),
         }
     }
@@ -379,6 +388,12 @@ impl Machine {
         } else {
             panic!("call: Not an Address");
         }
+    }
+
+    fn ret(&mut self) {
+        let (pc, fp) = self.call_stack.pop().unwrap();
+        self.pc = pc;
+        self.fp = fp;
     }
 
 
