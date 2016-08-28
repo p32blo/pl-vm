@@ -96,8 +96,6 @@ impl Operand {
 
 #[derive(Default)]
 struct Machine {
-    /// Stack Pointer
-    sp: usize,
     /// Frame Pointer
     fp: usize,
     /// Program Counter
@@ -107,7 +105,7 @@ struct Machine {
     /// Operand Stack
     stack: Vec<Operand>,
     /// Call Stack (instruction address, frame pointer)
-    // call_stack: Vec<(usize, usize)>,
+    call_stack: Vec<(usize, usize)>,
     /// Code
     code: Vec<String>,
     /// String stack
@@ -118,7 +116,7 @@ struct Machine {
 
 impl fmt::Debug for Machine {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "| sp: {:2} |", self.sp));
+        try!(write!(f, "| sp: {:2} |", self.stack.len() - 1));
         try!(write!(f, " fp: {:2} |", self.fp));
         try!(write!(f, " pc: {:2} |", self.pc));
         try!(write!(f, " gp: {:2} |", self.gp));
@@ -187,6 +185,7 @@ impl Machine {
                 "pushs" => self.pushs(&val.unwrap()),
                 "pusha" => self.pusha(&val.unwrap()),
                 "pushgp" => self.pushgp(),
+                "call" => self.call(),
                 "start" => {}
                 "stop" => return Err(()),
                 "loadn" => self.loadn(),
@@ -257,10 +256,8 @@ impl Machine {
         }
     }
 
-
     fn pushi(&mut self, val: &str) {
         self.stack.push(Operand::Integer(val.parse().unwrap()));
-        self.sp += 1;
     }
 
     fn pushn(&mut self, val: &str) {
@@ -271,7 +268,6 @@ impl Machine {
 
     fn push_reg(&mut self, addr: usize) {
         self.stack.push(Operand::Address(addr));
-        self.sp += 1;
     }
 
     fn pushgp(&mut self) {
@@ -285,7 +281,6 @@ impl Machine {
         let value = self.stack[addr];
 
         self.stack.push(value);
-        self.sp += 1;
     }
 
     fn pushs(&mut self, val: &str) {
@@ -331,7 +326,6 @@ impl Machine {
             Operand::Address(addr) => println!("{}", self.strings[addr]),
             _ => panic!("writes: Must be address to write string"),
         }
-        self.sp -= 1;
     }
 
     fn read(&mut self) {
@@ -339,7 +333,6 @@ impl Machine {
         io::stdin().read_line(&mut input).unwrap();
         self.strings.push(input.trim().to_string());
         self.stack.push(Operand::Address(self.strings.len() - 1));
-        self.sp += 1;
     }
 
     fn atoi(&mut self) {
@@ -347,7 +340,6 @@ impl Machine {
             Operand::Address(addr) => self.strings.remove(addr),
             _ => panic!("atoi: Must be address to write string"),
         };
-        self.sp -= 1;
 
         if let Err(_) = str.parse::<usize>() {
             panic!("Not a valid number");
@@ -373,6 +365,18 @@ impl Machine {
             panic!("storen: Not an Address");
         }
     }
+
+    fn call(&mut self) {
+        if let Operand::Address(addr) = self.stack.pop().unwrap() {
+            self.call_stack.push((self.pc, self.fp));
+
+            self.fp = self.stack.len() - 1;
+            self.pc = addr;
+        } else {
+            panic!("call: Not an Address");
+        }
+    }
+
 
     fn binary_op<F: FnOnce(Operand, Operand) -> Operand>(&mut self, op: F) {
         let n = self.stack.pop().unwrap();
