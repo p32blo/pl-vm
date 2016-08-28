@@ -199,8 +199,7 @@ impl Machine {
                 "pushgp" => self.pushgp(),
                 "call" => self.call(),
                 "return" => self.ret(),
-                "start" => {}
-                "nop" => {},
+                "start" | "nop" => {}
                 "stop" => return Err(io::Error::new(io::ErrorKind::Other, "End execution")),
                 "loadn" => self.loadn(),
                 "writei" => self.writei(),
@@ -223,9 +222,11 @@ impl Machine {
                 "jz" => self.jz(&val.unwrap()),
                 "err" => {
                     let err = Red.paint(Self::remove_quotes(&val.unwrap()));
-                    print!("\n{}", err);
-                    io::stdout().flush().ok().expect("Could not flush stdout");
-                    return Err(io::Error::new(io::ErrorKind::Other, format!("End execution: {}", err)));
+                    println!("");
+                    print!("{}", err);
+                    io::stdout().flush().expect("Could not flush stdout");
+                    return Err(io::Error::new(io::ErrorKind::Other,
+                                              format!("End execution: {}", err)));
                 }
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
@@ -332,7 +333,7 @@ impl Machine {
         let val = self.stack.pop().unwrap();
         if let Operand::Integer(i) = val {
             print!("{:?}", i);
-            io::stdout().flush().ok().expect("Could not flush stdout");
+            io::stdout().flush().expect("Could not flush stdout");
         } else {
             panic!("writei: Not an Integer");
         }
@@ -342,9 +343,9 @@ impl Machine {
     fn writes(&mut self) {
         match self.stack.pop().unwrap() {
             Operand::Address(addr) => {
-                print!("{}", self.strings[addr]); 
-                io::stdout().flush().ok().expect("Could not flush stdout");
-            },
+                print!("{}", self.strings[addr]);
+                io::stdout().flush().expect("Could not flush stdout");
+            }
             _ => panic!("writes: Must be address to write string"),
         }
     }
@@ -357,17 +358,18 @@ impl Machine {
         Ok(())
     }
 
-    fn atoi(&mut self) -> io::Result<()>{
+    fn atoi(&mut self) -> io::Result<()> {
         let str = match self.stack.pop().unwrap() {
             Operand::Address(addr) => self.strings.remove(addr),
             _ => panic!("atoi: Must be address to write string"),
         };
 
         if let Err(_) = str.parse::<usize>() {
-            return Err(io::Error::new(io::ErrorKind::Other, format!("End execution: {}", Red.paint("Not a valid number"))));
+            Err(io::Error::new(io::ErrorKind::Other,
+                               format!("End execution: {}", Red.paint("Not a valid number"))))
+        } else {
+            Ok(self.pushi(&str))
         }
-        self.pushi(&str);
-        Ok(())
     }
 
     fn storeg(&mut self, num: &str) {
