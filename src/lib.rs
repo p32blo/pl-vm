@@ -116,7 +116,7 @@ struct Machine {
 
 impl fmt::Debug for Machine {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "| sp: {:2} |", self.stack.len() - 1));
+        try!(write!(f, "| sp: {:2} |", self.sp()));
         try!(write!(f, " fp: {:2} |", self.fp));
         try!(write!(f, " pc: {:2} |", self.pc));
         try!(write!(f, " gp: {:2} |", self.gp));
@@ -161,6 +161,10 @@ impl Machine {
             }
         }
         false
+    }
+
+    fn sp(&self) -> usize {
+        self.stack.len() - 1
     }
 
     fn run(&mut self) -> Result<(), ()> {
@@ -370,7 +374,7 @@ impl Machine {
         if let Operand::Address(addr) = self.stack.pop().unwrap() {
             self.call_stack.push((self.pc, self.fp));
 
-            self.fp = self.stack.len() - 1;
+            self.fp = self.sp();
             self.pc = addr;
         } else {
             panic!("call: Not an Address");
