@@ -32,70 +32,70 @@ impl fmt::Debug for Operand {
 }
 
 impl Operand {
-    fn add(n: Self, a: Self) -> Self {
+    fn add(n: &Self, a: &Self) -> Self {
         match (n, a) {
-            (Operand::Integer(n), Operand::Address(a)) => Operand::Address((a as i32 + n) as usize),
-            (Operand::Integer(n), Operand::Integer(a)) => Operand::Integer(n + a),
+            (&Operand::Integer(n), &Operand::Address(a)) => Operand::Address((a as i32 + n) as usize),
+            (&Operand::Integer(n), &Operand::Integer(a)) => Operand::Integer(n + a),
             _ => panic!(format!("Operand::add => Invalid Operation: {:?} + {:?}", n, a)),
         }
     }
 
-    fn mul(n: Self, m: Self) -> Self {
+    fn mul(n: &Self, m: &Self) -> Self {
         match (n, m) {
-            (Operand::Integer(n), Operand::Integer(m)) => Operand::Integer(n * m),
+            (&Operand::Integer(n), &Operand::Integer(m)) => Operand::Integer(n * m),
             _ => panic!(format!("Operand::mul => Invalid Operation: {:?} * {:?}", n, m)),
         }
     }
 
-    fn div(n: Self, m: Self) -> Self {
+    fn div(n: &Self, m: &Self) -> Self {
         match (n, m) {
-            (Operand::Integer(n), Operand::Integer(m)) => Operand::Integer(m / n),
+            (&Operand::Integer(n), &Operand::Integer(m)) => Operand::Integer(m / n),
             _ => panic!(format!("Operand::div => Invalid Operation: {:?} / {:?}", m, n)),
         }
     }
-    fn module(n: Self, m: Self) -> Self {
+    fn module(n: &Self, m: &Self) -> Self {
         match (n, m) {
-            (Operand::Integer(n), Operand::Integer(m)) => Operand::Integer(m % n),
+            (&Operand::Integer(n), &Operand::Integer(m)) => Operand::Integer(m % n),
             _ => panic!(format!("Operand::mod => Invalid Operation: {:?} % {:?}", m, n)),
         }
     }
 
-    fn equal(n: Self, m: Self) -> Self {
+    fn equal(n: &Self, m: &Self) -> Self {
         match (n, m) {
-            (Operand::Integer(n), Operand::Integer(m)) if n == m => Operand::Integer(1),
-            (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
+            (&Operand::Integer(n), &Operand::Integer(m)) if n == m => Operand::Integer(1),
+            (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
             _ => panic!(format!("Operand::equal => Invalid Operation: {:?} == {:?}", m, n)),
         }
     }
 
-    fn inf(n: Self, m: Self) -> Self {
+    fn inf(n: &Self, m: &Self) -> Self {
         match (n, m) {
-            (Operand::Integer(n), Operand::Integer(m)) if m < n => Operand::Integer(1),
-            (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
+            (&Operand::Integer(n), &Operand::Integer(m)) if m < n => Operand::Integer(1),
+            (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
             _ => panic!(format!("Operand::sup => Invalid Operation: {:?} < {:?}", m, n)),
         }
     }
 
-    fn infeq(n: Self, m: Self) -> Self {
+    fn infeq(n: &Self, m: &Self) -> Self {
         match (n, m) {
-            (Operand::Integer(n), Operand::Integer(m)) if m <= n => Operand::Integer(1),
-            (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
+            (&Operand::Integer(n), &Operand::Integer(m)) if m <= n => Operand::Integer(1),
+            (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
             _ => panic!(format!("Operand::sup => Invalid Operation: {:?} <= {:?}", m, n)),
         }
     }
 
-    fn sup(n: Self, m: Self) -> Self {
+    fn sup(n: &Self, m: &Self) -> Self {
         match (n, m) {
-            (Operand::Integer(n), Operand::Integer(m)) if m > n => Operand::Integer(1),
-            (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
+            (&Operand::Integer(n), &Operand::Integer(m)) if m > n => Operand::Integer(1),
+            (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
             _ => panic!(format!("Operand::sup => Invalid Operation: {:?} > {:?}", m, n)),
         }
     }
 
-    fn supeq(n: Self, m: Self) -> Self {
+    fn supeq(n: &Self, m: &Self) -> Self {
         match (n, m) {
-            (Operand::Integer(n), Operand::Integer(m)) if m >= n => Operand::Integer(1),
-            (Operand::Integer(..), Operand::Integer(..)) => Operand::Integer(0),
+            (&Operand::Integer(n), &Operand::Integer(m)) if m >= n => Operand::Integer(1),
+            (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
             _ => panic!(format!("Operand::supeq => Invalid Operation: {:?} >= {:?}", m, n)),
         }
     }
@@ -321,7 +321,7 @@ impl Machine {
         let n = self.stack.pop().unwrap();
         let a = self.stack.pop().unwrap();
 
-        if let Operand::Address(addr) = Operand::add(n, a) {
+        if let Operand::Address(addr) = Operand::add(&n, &a) {
             let v = self.stack[addr];
             self.stack.push(v);
         } else {
@@ -384,7 +384,7 @@ impl Machine {
         let n = self.stack.pop().unwrap();
         let a = self.stack.pop().unwrap();
 
-        if let Operand::Address(addr) = Operand::add(n, a) {
+        if let Operand::Address(addr) = Operand::add(&n, &a) {
             self.stack[addr] = v;
         } else {
             panic!("storen: Not an Address");
@@ -409,11 +409,11 @@ impl Machine {
     }
 
 
-    fn binary_op<F: FnOnce(Operand, Operand) -> Operand>(&mut self, op: F) {
+    fn binary_op<F: FnOnce(&Operand, &Operand) -> Operand>(&mut self, op: F) {
         let n = self.stack.pop().unwrap();
         let m = self.stack.pop().unwrap();
 
-        let val = op(n, m);
+        let val = op(&n, &m);
 
         self.stack.push(val);
     }
