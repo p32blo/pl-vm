@@ -124,14 +124,14 @@ struct Machine {
 
 impl fmt::Debug for Machine {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "| sp: {:2} |", self.sp()));
-        try!(write!(f, " fp: {:2} |", self.fp));
-        try!(write!(f, " pc: {:2} |", self.pc));
-        try!(write!(f, " gp: {:2} |", self.gp));
+        write!(f, "| sp: {:2} |", self.sp())?;
+        write!(f, " fp: {:2} |", self.fp)?;
+        write!(f, " pc: {:2} |", self.pc)?;
+        write!(f, " gp: {:2} |", self.gp)?;
 
-        try!(write!(f, "\nstack:\n"));
+        write!(f, "\nstack:\n")?;
         for val in &self.stack {
-            try!(write!(f, "{:?} ", val));
+            write!(f, "{:?} ", val)?;
         }
         Ok(())
     }
@@ -143,9 +143,9 @@ impl Machine {
     }
 
     fn load<P: AsRef<Path>>(&mut self, path: P) -> io::Result<()> {
-        let mut f = try!(File::open(path));
+        let mut f = File::open(path)?;
         let mut buffer = String::new();
-        try!(f.read_to_string(&mut buffer));
+        f.read_to_string(&mut buffer)?;
         self.code = buffer.lines()
             .map(|x| Self::remove_comments(&x.trim().to_lowercase()))
             .filter(|x| !x.is_empty())
@@ -178,7 +178,7 @@ impl Machine {
     fn run(&mut self) -> io::Result<()> {
         // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);
         loop {
-            let _inst = try!(self.run_instruction());
+            let _inst = self.run_instruction()?;
             // println!("<{:^8}>\n{:?}", _inst, *self);
             // io::stdin().read_line(&mut String::new()).unwrap();
         }
@@ -204,8 +204,8 @@ impl Machine {
                 "loadn" => self.loadn(),
                 "writei" => self.writei(),
                 "writes" => self.writes(),
-                "read" => try!(self.read()),
-                "atoi" => try!(self.atoi()),
+                "read" => self.read()?,
+                "atoi" => self.atoi()?,
                 "padd" => self.padd(),
                 "add" => self.add(),
                 "mul" => self.mul(),
@@ -352,7 +352,7 @@ impl Machine {
 
     fn read(&mut self) -> io::Result<()> {
         let mut input = String::new();
-        try!(io::stdin().read_line(&mut input));
+        io::stdin().read_line(&mut input)?;
         self.strings.push(input.trim().to_string());
         self.stack.push(Operand::Address(self.strings.len() - 1));
         Ok(())
@@ -476,14 +476,8 @@ impl Machine {
 
 pub fn start<P: AsRef<Path>>(path: P) -> io::Result<()> {
     let mut m = Machine::new();
-    try!(m.load(path));
+    m.load(path)?;
     // println!("{:#?}", m);
-    try!(m.run());
+    m.run()?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {}
 }
