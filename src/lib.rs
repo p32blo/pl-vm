@@ -185,6 +185,14 @@ impl Machine {
         self.stack.len() - 1
     }
 
+    fn stack_pop(&mut self) -> Operand {
+        self.stack.pop().expect("Stack is empty")
+    }
+
+    fn call_stack_pop(&mut self) -> (usize, usize) {
+        self.call_stack.pop().expect("Call stack is empty")
+    }
+
     fn run(&mut self) -> Result<()> {
         // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);
         loop {
@@ -207,9 +215,21 @@ impl Machine {
 
         if !Self::is_label(&inst) {
             match inst.as_ref() {
-                "pushi" => self.pushi(&val.expect(val_err)),
-                "pushn" => self.pushn(&val.expect(val_err)),
-                "pushg" => self.pushg(&val.expect(val_err)),
+                "pushi" => {
+                    self.pushi(val.expect(val_err)
+                        .parse()
+                        .expect("value is not a positive integer"))
+                }
+                "pushn" => {
+                    self.pushn(val.expect(val_err)
+                        .parse()
+                        .expect("value is not a positive integer"))
+                }
+                "pushg" => {
+                    self.pushg(val.expect(val_err)
+                        .parse()
+                        .expect("value is not a positive integer"))
+                }
                 "pushs" => self.pushs(&val.expect(val_err)),
                 "pusha" => self.pusha(&val.expect(val_err)),
                 "pushgp" => self.pushgp(),
@@ -227,7 +247,11 @@ impl Machine {
                 "mul" => self.mul(),
                 "div" => self.div(),
                 "mod" => self.module(),
-                "storeg" => self.storeg(&val.expect(val_err)),
+                "storeg" => {
+                    self.storeg(val.expect(val_err)
+                        .parse()
+                        .expect("value is not a positive integer"))
+                }
                 "storen" => self.storen(),
                 "equal" => self.equal(),
                 "inf" => self.inf(),
@@ -286,13 +310,13 @@ impl Machine {
         }
     }
 
-    fn pushi(&mut self, val: &str) {
-        self.stack.push(Operand::Integer(val.parse().unwrap()));
+    fn pushi(&mut self, val: i32) {
+        self.stack.push(Operand::Integer(val));
     }
 
-    fn pushn(&mut self, val: &str) {
-        for _ in 0..val.parse().unwrap() {
-            self.pushi("0");
+    fn pushn(&mut self, val: i32) {
+        for _ in 0..val {
+            self.pushi(0);
         }
     }
 
@@ -305,8 +329,7 @@ impl Machine {
         self.push_reg(gp);
     }
 
-    fn pushg(&mut self, val: &str) {
-        let val: usize = val.parse().unwrap();
+    fn pushg(&mut self, val: usize) {
         let addr = self.gp + val;
         let value = self.stack[addr];
 
@@ -330,8 +353,8 @@ impl Machine {
     }
 
     fn loadn(&mut self) {
-        let n = self.stack.pop().unwrap();
-        let a = self.stack.pop().unwrap();
+        let n = self.stack_pop();
+        let a = self.stack_pop();
 
         if let Operand::Address(addr) = Operand::add(&n, &a) {
             let v = self.stack[addr];
@@ -342,7 +365,7 @@ impl Machine {
     }
 
     fn writei(&mut self) {
-        let val = self.stack.pop().unwrap();
+        let val = self.stack_pop();
         if let Operand::Integer(i) = val {
             print!("{:?}", i);
             io::stdout().flush().expect("Could not flush stdout");
@@ -353,7 +376,7 @@ impl Machine {
     }
 
     fn writes(&mut self) {
-        match self.stack.pop().unwrap() {
+        match self.stack_pop() {
             Operand::Address(addr) => {
                 print!("{}", self.strings[addr]);
                 io::stdout().flush().expect("Could not flush stdout");
@@ -371,39 +394,35 @@ impl Machine {
     }
 
     fn atoi(&mut self) -> Result<()> {
-        let str = match self.stack.pop().unwrap() {
+        let str = match self.stack_pop() {
             Operand::Address(addr) => self.strings.remove(addr),
             _ => panic!("atoi: Must be address to write string"),
         };
 
-        if let Err(_) = str.parse::<usize>() {
-            bail!("Value is not a valid Integer")
-        } else {
-            Ok(self.pushi(&str))
+        match str.parse() {
+            Ok(val) => Ok(self.pushi(val)),
+            Err(_) => bail!("Value is not a valid Integer"),
         }
     }
 
-    fn storeg(&mut self, num: &str) {
-        let n: usize = num.parse().unwrap();
-        let val = self.stack.pop().unwrap();
-
+    fn storeg(&mut self, n: usize) {
+        let val = self.stack_pop();
         self.stack[self.gp + n] = val;
     }
 
     fn storen(&mut self) {
-        let v = self.stack.pop().unwrap();
-        let n = self.stack.pop().unwrap();
-        let a = self.stack.pop().unwrap();
+        let v = self.stack_pop();
+        let n = self.stack_pop();
+        let a = self.stack_pop();
 
-        if let Operand::Address(addr) = Operand::add(&n, &a) {
-            self.stack[addr] = v;
-        } else {
-            panic!("storen: Not an Address");
+        match Operand::add(&n, &a) {
+            Operand::Address(addr) => self.stack[addr] = v,
+            _ => panic!("storen: Not an Address"),
         }
     }
 
     fn call(&mut self) {
-        if let Operand::Address(addr) = self.stack.pop().unwrap() {
+        if let Operand::Address(addr) = self.stack_pop() {
             self.call_stack.push((self.pc, self.fp));
 
             self.fp = self.sp();
@@ -414,15 +433,15 @@ impl Machine {
     }
 
     fn ret(&mut self) {
-        let (pc, fp) = self.call_stack.pop().unwrap();
+        let (pc, fp) = self.call_stack_pop();
         self.pc = pc;
         self.fp = fp;
     }
 
 
     fn binary_op<F: FnOnce(&Operand, &Operand) -> Operand>(&mut self, op: F) {
-        let n = self.stack.pop().unwrap();
-        let m = self.stack.pop().unwrap();
+        let n = self.stack_pop();
+        let m = self.stack_pop();
 
         let val = op(&n, &m);
 
@@ -474,7 +493,7 @@ impl Machine {
     }
 
     fn jz(&mut self, val: &str) {
-        let eq = self.stack.pop().unwrap();
+        let eq = self.stack_pop();
 
         match eq {
             Operand::Integer(0) => self.jump(val),
