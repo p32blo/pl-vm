@@ -5,7 +5,4 @@ authors = ["André Oliveira <p32blo@gmail.com>"]
 
 [dependencies]
 unescape = "0.1"
-error-chain = "0.7"
-
-[dev-dependencies]
-ansi_term = "0.8"
+error-chain = { version = "0.7", default-features = false }
