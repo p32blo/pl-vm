@@ -6,3 +6,4 @@ authors = ["André Oliveira <p32blo@gmail.com>"]
 [dependencies]
 ansi_term = "0.8"
 unescape = "0.1"
+error-chain = "0.7"

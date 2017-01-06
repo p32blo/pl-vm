@@ -1,8 +1,10 @@
 
+#![recursion_limit = "1024"]
+
+#[macro_use]
+extern crate error_chain;
 extern crate unescape;
 extern crate ansi_term;
-
-use ansi_term::Colour::Red;
 
 use std::io;
 use std::io::Write;
@@ -14,6 +16,13 @@ use std::fs::File;
 use std::io::Read;
 
 use std::collections::HashMap;
+
+mod errors {
+    // Create the Error, ErrorKind, ResultExt, and Result types
+    error_chain!{}
+}
+
+use errors::*;
 
 #[derive(Clone, Copy)]
 enum Operand {
@@ -34,7 +43,9 @@ impl fmt::Debug for Operand {
 impl Operand {
     fn add(n: &Self, a: &Self) -> Self {
         match (n, a) {
-            (&Operand::Integer(n), &Operand::Address(a)) => Operand::Address((a as i32 + n) as usize),
+            (&Operand::Integer(n), &Operand::Address(a)) => {
+                Operand::Address((a as i32 + n) as usize)
+            }
             (&Operand::Integer(n), &Operand::Integer(a)) => Operand::Integer(n + a),
             _ => panic!(format!("Operand::add => Invalid Operation: {:?} + {:?}", n, a)),
         }
@@ -142,10 +153,10 @@ impl Machine {
         Self::default()
     }
 
-    fn load<P: AsRef<Path>>(&mut self, path: P) -> io::Result<()> {
-        let mut f = File::open(path)?;
+    fn load<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+        let mut f = File::open(path).chain_err(|| "Failed to open file")?;
         let mut buffer = String::new();
-        f.read_to_string(&mut buffer)?;
+        f.read_to_string(&mut buffer).chain_err(|| "Unable to Read file")?;
         self.code = buffer.lines()
             .map(|x| Self::remove_comments(&x.trim().to_lowercase()))
             .filter(|x| !x.is_empty())
@@ -175,16 +186,21 @@ impl Machine {
         self.stack.len() - 1
     }
 
-    fn run(&mut self) -> io::Result<()> {
+    fn run(&mut self) -> Result<()> {
         // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);
         loop {
-            let _inst = self.run_instruction()?;
-            // println!("<{:^8}>\n{:?}", _inst, *self);
-            // io::stdin().read_line(&mut String::new()).unwrap();
+            match self.run_instruction()? {
+                Some(_inst) => {
+                    // println!("<{:^8}>\n{:?}", _inst, *self);
+                    // io::stdin().read_line(&mut String::new()).unwrap();
+                }
+                None => break,
+            }
         }
+        Ok(())
     }
 
-    fn run_instruction(&mut self) -> io::Result<String> {
+    fn run_instruction(&mut self) -> Result<Option<String>> {
         let (inst, val) = self.get_instruction();
 
         // println!("instr: <{:?}>", (&inst, &val));
@@ -200,7 +216,7 @@ impl Machine {
                 "call" => self.call(),
                 "return" => self.ret(),
                 "start" | "nop" => {}
-                "stop" => return Err(io::Error::new(io::ErrorKind::Other, "End execution")),
+                "stop" => return Ok(None),
                 "loadn" => self.loadn(),
                 "writei" => self.writei(),
                 "writes" => self.writes(),
@@ -221,18 +237,16 @@ impl Machine {
                 "jump" => self.jump(&val.unwrap()),
                 "jz" => self.jz(&val.unwrap()),
                 "err" => {
-                    let err = Red.paint(Self::remove_quotes(&val.unwrap()));
-                    println!("");
-                    print!("{}", err);
-                    io::stdout().flush().expect("Could not flush stdout");
-                    return Err(io::Error::new(io::ErrorKind::Other,
-                                              format!("End execution: {}", err)));
+                    let err = Self::remove_quotes(&val.unwrap());
+                    println!();
+                    io::stdout().flush().chain_err(|| "Could not flush stdout")?;
+                    bail!(format!("End execution with [{}]", err))
                 }
                 _ => panic!(format!("Instruction not found: {}", inst)),
             }
         }
         self.pc += 1;
-        Ok(inst)
+        Ok(Some(inst))
     }
 
     fn remove_comments(inst: &str) -> String {
@@ -350,23 +364,22 @@ impl Machine {
         }
     }
 
-    fn read(&mut self) -> io::Result<()> {
+    fn read(&mut self) -> Result<()> {
         let mut input = String::new();
-        io::stdin().read_line(&mut input)?;
+        io::stdin().read_line(&mut input).chain_err(|| "Failed to read line from stdin")?;
         self.strings.push(input.trim().to_string());
         self.stack.push(Operand::Address(self.strings.len() - 1));
         Ok(())
     }
 
-    fn atoi(&mut self) -> io::Result<()> {
+    fn atoi(&mut self) -> Result<()> {
         let str = match self.stack.pop().unwrap() {
             Operand::Address(addr) => self.strings.remove(addr),
             _ => panic!("atoi: Must be address to write string"),
         };
 
         if let Err(_) = str.parse::<usize>() {
-            Err(io::Error::new(io::ErrorKind::Other,
-                               format!("End execution: {}", Red.paint("Not a valid number"))))
+            bail!("Not a valid number")
         } else {
             Ok(self.pushi(&str))
         }
@@ -474,9 +487,9 @@ impl Machine {
 }
 
 
-pub fn start<P: AsRef<Path>>(path: P) -> io::Result<()> {
+pub fn start<P: AsRef<Path>>(path: P) -> Result<()> {
     let mut m = Machine::new();
-    m.load(path)?;
+    m.load(&path).chain_err(|| format!("Cannot load file '{}'", path.as_ref().display()))?;
     // println!("{:#?}", m);
     m.run()?;
     Ok(())
