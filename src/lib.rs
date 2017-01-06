@@ -202,15 +202,16 @@ impl Machine {
     fn run_instruction(&mut self) -> Result<Option<String>> {
         let (inst, val) = self.get_instruction();
 
+        let val_err = &format!("No value found for '{}' instruction", inst);
         // println!("instr: <{:?}>", (&inst, &val));
 
         if !Self::is_label(&inst) {
             match inst.as_ref() {
-                "pushi" => self.pushi(&val.unwrap()),
-                "pushn" => self.pushn(&val.unwrap()),
-                "pushg" => self.pushg(&val.unwrap()),
-                "pushs" => self.pushs(&val.unwrap()),
-                "pusha" => self.pusha(&val.unwrap()),
+                "pushi" => self.pushi(&val.expect(val_err)),
+                "pushn" => self.pushn(&val.expect(val_err)),
+                "pushg" => self.pushg(&val.expect(val_err)),
+                "pushs" => self.pushs(&val.expect(val_err)),
+                "pusha" => self.pusha(&val.expect(val_err)),
                 "pushgp" => self.pushgp(),
                 "call" => self.call(),
                 "return" => self.ret(),
@@ -226,19 +227,17 @@ impl Machine {
                 "mul" => self.mul(),
                 "div" => self.div(),
                 "mod" => self.module(),
-                "storeg" => self.storeg(&val.unwrap()),
+                "storeg" => self.storeg(&val.expect(val_err)),
                 "storen" => self.storen(),
                 "equal" => self.equal(),
                 "inf" => self.inf(),
                 "infeq" => self.infeq(),
                 "sup" => self.sup(),
                 "supeq" => self.supeq(),
-                "jump" => self.jump(&val.unwrap()),
-                "jz" => self.jz(&val.unwrap()),
+                "jump" => self.jump(&val.expect(val_err)),
+                "jz" => self.jz(&val.expect(val_err)),
                 "err" => {
-                    let err = Self::remove_quotes(&val.unwrap());
-                    println!();
-                    io::stdout().flush().chain_err(|| "Could not flush stdout")?;
+                    let err = Self::remove_quotes(&val.expect(val_err));
                     bail!(format!("End execution with [{}]", err))
                 }
                 _ => panic!(format!("Instruction not found: {}", inst)),
@@ -270,18 +269,18 @@ impl Machine {
 
 
     fn get_instruction(&mut self) -> (String, Option<String>) {
-        let mut inst = &self.code[self.pc];
+        let mut inst_ref = &self.code[self.pc];
 
-        while inst.is_empty() {
+        while inst_ref.is_empty() {
             self.pc += 1;
-            inst = &self.code[self.pc];
+            inst_ref = &self.code[self.pc];
         }
 
-        let find = inst.find(' ');
+        let find = inst_ref.find(' ');
         match find {
-            None => (inst.to_string(), None),
+            None => (inst_ref.to_string(), None),
             Some(f) => {
-                let (inst, val) = inst.split_at(f);
+                let (inst, val) = inst_ref.split_at(f);
                 (inst.to_string(), Some(val.trim().to_string()))
             }
         }
@@ -378,7 +377,7 @@ impl Machine {
         };
 
         if let Err(_) = str.parse::<usize>() {
-            bail!("Not a valid number")
+            bail!("Value is not a valid Integer")
         } else {
             Ok(self.pushi(&str))
         }
