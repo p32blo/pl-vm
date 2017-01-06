@@ -4,7 +4,6 @@
 #[macro_use]
 extern crate error_chain;
 extern crate unescape;
-extern crate ansi_term;
 
 use std::io;
 use std::io::Write;
