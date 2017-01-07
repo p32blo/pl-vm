@@ -195,14 +195,9 @@ impl Machine {
 
     fn run(&mut self) -> Result<()> {
         // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);
-        loop {
-            match self.run_instruction()? {
-                Some(_inst) => {
-                    // println!("<{:^8}>\n{:?}", _inst, *self);
-                    // io::stdin().read_line(&mut String::new()).unwrap();
-                }
-                None => break,
-            }
+        while let Some(_inst) = self.run_instruction()? {
+            // println!("<{:^8}>\n{:?}", _inst, *self);
+            // io::stdin().read_line(&mut String::new()).unwrap();
         }
         Ok(())
     }
