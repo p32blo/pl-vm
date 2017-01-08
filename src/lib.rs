@@ -27,7 +27,7 @@ use errors::*;
 
 enum Command {
     Continue,
-    Step,
+    Step(usize),
 }
 
 impl FromStr for Command {
@@ -35,8 +35,8 @@ impl FromStr for Command {
     fn from_str(s: &str) -> Result<Command> {
         match s.to_lowercase().as_ref() {
             "c" | "continue" => Ok(Command::Continue),
-            "s" | "step" => Ok(Command::Step),
-            _ => bail!("No Representation for Command"),
+            "s" | "step" => Ok(Command::Step(1)),
+            _ => bail!("Command not Found"),
         }
     }
 }
@@ -186,7 +186,6 @@ impl Machine {
                 self.labels.insert(label, i);
             }
         }
-
         Ok(())
     }
 
@@ -217,26 +216,51 @@ impl Machine {
 
         let mut args = buf.split_whitespace();
 
-        args.next()
+        let res = args.next()
             .ok_or("No command found".into())
-            .and_then(|x| x.parse())
+            .and_then(|x| x.parse())?;
+
+        Ok(match args.next() {
+            Some(arg) => {
+                match res {
+                    Command::Step(_) => {
+                        Command::Step(arg.parse().chain_err(|| "Not a valid argument")?)
+                    }
+                    v => v,
+                }
+            }
+            None => res,
+        })
     }
 
     fn debug(&mut self) -> Result<bool> {
         loop {
             print!("(debug) ");
             io::stdout().flush().expect("Could not flush stdout");
-            if let Ok(cmd) = self.readline() {
-                match cmd {
-                    Command::Continue => {
-                        return Ok(false);
-                    }
-                    Command::Step => {
-                        if let Some(inst) = self.run_instruction()? {
-                            println!("\t< {} >", inst);
+            match self.readline() {
+                Ok(cmd) => {
+                    match cmd {
+                        Command::Continue => {
+                            return Ok(false);
                         }
-                        return Ok(true);
+                        Command::Step(end) => {
+                            for _ in 0..end {
+                                if let Some(inst) = self.run_instruction()? {
+                                    println!("\t< {} >", inst);
+                                } else {
+                                    break;
+                                }
+                            }
+                            return Ok(true);
+                        }
                     }
+                }
+                Err(ref e) => {
+                    print!("error: {}. ", e);
+                    for e in e.iter().skip(1) {
+                        print!("{}. ", e);
+                    }
+                    println!();
                 }
             }
         }
