@@ -267,13 +267,13 @@ impl Machine {
                         }
                         Command::PrintStack => {
                             println!("stack:");
-                            for (i, val) in self.stack.iter().rev().enumerate() {
-                                print!("{:?}", val);
+                            for (i, val) in self.stack.iter().enumerate().rev() {
+                                print!("{:?} ", val);
                                 if i == self.fp {
-                                    print!(" <- fp");
+                                    print!("<- fp");
                                 }
                                 if i == self.sp() {
-                                    print!(" <- sp");
+                                    print!("<- sp");
                                 }
                                 println!();
                             }
