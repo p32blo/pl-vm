@@ -267,10 +267,16 @@ impl Machine {
                         }
                         Command::PrintStack => {
                             println!("stack:");
-                            for val in self.stack.iter().rev() {
-                                println!("{:?} ", val);
+                            for (i, val) in self.stack.iter().rev().enumerate() {
+                                print!("{:?}", val);
+                                if i == self.fp {
+                                    print!(" <- fp");
+                                }
+                                if i == self.sp() {
+                                    print!(" <- sp");
+                                }
+                                println!();
                             }
-                            println!();
                         }
                         Command::Quit => {
                             ::std::process::exit(0);
@@ -303,7 +309,7 @@ impl Machine {
                     }
                 }
                 Err(ref e) => {
-                    print!("\t{}. ", e);
+                    print!("\terror: {}. ", e);
                     for e in e.iter().skip(1) {
                         print!("{}. ", e);
                     }
