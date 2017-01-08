@@ -7,7 +7,6 @@ extern crate unescape;
 
 use std::io;
 use std::io::Write;
-
 use std::fmt;
 
 use std::path::Path;
@@ -16,12 +15,31 @@ use std::io::Read;
 
 use std::collections::HashMap;
 
+use std::str::FromStr;
+
 mod errors {
     // Create the Error, ErrorKind, ResultExt, and Result types
     error_chain!{}
 }
 
 use errors::*;
+
+
+enum Command {
+    Continue,
+    Step,
+}
+
+impl FromStr for Command {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Command> {
+        match s.to_lowercase().as_ref() {
+            "c" | "continue" => Ok(Command::Continue),
+            "s" | "step" => Ok(Command::Step),
+            _ => bail!("No Representation for Command"),
+        }
+    }
+}
 
 #[derive(Clone, Copy)]
 enum Operand {
@@ -193,18 +211,57 @@ impl Machine {
         self.call_stack.pop().expect("Call stack is empty")
     }
 
+    fn readline(&self) -> Result<Command> {
+        let mut buf = String::new();
+        io::stdin().read_line(&mut buf).chain_err(|| "Error reading line")?;
+
+        let mut args = buf.split_whitespace();
+
+        args.next()
+            .ok_or("No command found".into())
+            .and_then(|x| x.parse())
+    }
+
+    fn debug(&mut self) -> Result<bool> {
+        loop {
+            print!("(debug) ");
+            io::stdout().flush().expect("Could not flush stdout");
+            if let Ok(cmd) = self.readline() {
+                match cmd {
+                    Command::Continue => {
+                        return Ok(false);
+                    }
+                    Command::Step => {
+                        if let Some(inst) = self.run_instruction()? {
+                            println!("\t< {} >", inst);
+                        }
+                        return Ok(true);
+                    }
+                }
+            }
+        }
+    }
+
     fn run(&mut self) -> Result<()> {
-        // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);
-        while let Some(_inst) = self.run_instruction()? {
-            // println!("<{:^8}>\n{:?}", _inst, *self);
-            // io::stdin().read_line(&mut String::new()).unwrap();
+        let mut debug = true;
+        loop {
+            if debug {
+                debug = self.debug()?;
+            } else if let Some(_inst) = self.run_instruction()? {
+                // io::stdin().read_line(&mut String::new()).unwrap();
+                // println!("<{:^8}>", _inst);
+                // println!("{:?}", *self)
+                // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);
+            } else {
+                break;
+            }
         }
         Ok(())
     }
 
     fn run_instruction(&mut self) -> Result<Option<String>> {
-        let (inst, val) = self.get_instruction();
-
+        let instr = self.get_instruction();
+        let (inst, val) = Self::decode(&instr);
         let val_err = &format!("No value found for '{}' instruction", inst);
         // println!("instr: <{:?}>", (&inst, &val));
 
@@ -263,7 +320,8 @@ impl Machine {
             }
         }
         self.pc += 1;
-        Ok(Some(inst))
+
+        Ok(Some(instr))
     }
 
     fn remove_comments(inst: &str) -> String {
@@ -286,15 +344,7 @@ impl Machine {
         unescape::unescape(&val).unwrap()
     }
 
-
-    fn get_instruction(&mut self) -> (String, Option<String>) {
-        let mut inst_ref = &self.code[self.pc];
-
-        while inst_ref.is_empty() {
-            self.pc += 1;
-            inst_ref = &self.code[self.pc];
-        }
-
+    fn decode(inst_ref: &str) -> (String, Option<String>) {
         let find = inst_ref.find(' ');
         match find {
             None => (inst_ref.to_string(), None),
@@ -303,6 +353,16 @@ impl Machine {
                 (inst.to_string(), Some(val.trim().to_string()))
             }
         }
+    }
+
+    fn get_instruction(&mut self) -> String {
+        let mut inst = &self.code[self.pc];
+
+        while inst.is_empty() {
+            self.pc += 1;
+            inst = &self.code[self.pc];
+        }
+        inst.to_string()
     }
 
     fn pushi(&mut self, val: i32) {
