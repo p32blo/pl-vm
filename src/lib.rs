@@ -24,6 +24,15 @@ mod errors {
 
 use errors::*;
 
+enum Status {
+    Success,
+    Exit,
+}
+
+enum Mode {
+    Debug,
+    Running,
+}
 
 enum Command {
     Quit,
@@ -229,7 +238,7 @@ impl Machine {
         buf.parse()
     }
 
-    fn debug(&mut self) -> Result<bool> {
+    fn debug(&mut self) -> Result<Mode> {
         loop {
             print!("(debug) ");
             io::stdout().flush().expect("Could not flush stdout");
@@ -240,17 +249,17 @@ impl Machine {
                             ::std::process::exit(0);
                         }
                         Command::Continue => {
-                            return Ok(false);
+                            return Ok(Mode::Running);
                         }
                         Command::Step(end) => {
                             for _ in 0..end {
-                                if let Some(inst) = self.run_instruction()? {
-                                    println!("\t< {} >", inst);
-                                } else {
+                                let instr = self.get_instruction();
+                                println!("\t< {} >", instr);
+                                if let Status::Exit = self.run_instruction(instr)? {
                                     break;
                                 }
                             }
-                            return Ok(true);
+                            return Ok(Mode::Debug);
                         }
                         Command::Empty => {}
                     }
@@ -267,24 +276,26 @@ impl Machine {
     }
 
     fn run(&mut self) -> Result<()> {
-        let mut debug = true;
+        let mut mode = Mode::Debug;
         loop {
-            if debug {
-                debug = self.debug()?;
-            } else if let Some(_inst) = self.run_instruction()? {
-                // io::stdin().read_line(&mut String::new()).unwrap();
-                // println!("<{:^8}>", _inst);
-                // println!("{:?}", *self)
-                // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);
-            } else {
-                break;
+            match mode {
+                Mode::Debug => mode = self.debug()?,
+                Mode::Running => {
+                    let instr = self.get_instruction();
+                    if let Status::Exit = self.run_instruction(instr)? {
+                        break;
+                    }
+                    // io::stdin().read_line(&mut String::new()).unwrap();
+                    // println!("<{:^8}>", _inst);
+                    // println!("{:?}", *self)
+                    // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);}
+                }
             }
         }
         Ok(())
     }
 
-    fn run_instruction(&mut self) -> Result<Option<String>> {
-        let instr = self.get_instruction();
+    fn run_instruction(&mut self, instr: String) -> Result<Status> {
         let (inst, val) = Self::decode(&instr);
         let val_err = &format!("No value found for '{}' instruction", inst);
         // println!("instr: <{:?}>", (&inst, &val));
@@ -312,7 +323,7 @@ impl Machine {
                 "call" => self.call(),
                 "return" => self.ret(),
                 "start" | "nop" => {}
-                "stop" => return Ok(None),
+                "stop" => return Ok(Status::Exit),
                 "loadn" => self.loadn(),
                 "writei" => self.writei(),
                 "writes" => self.writes(),
@@ -345,7 +356,7 @@ impl Machine {
         }
         self.pc += 1;
 
-        Ok(Some(instr))
+        Ok(Status::Success)
     }
 
     fn remove_comments(inst: &str) -> String {
