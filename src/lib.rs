@@ -26,6 +26,7 @@ use errors::*;
 
 
 enum Command {
+    Empty,
     Continue,
     Step(usize),
 }
@@ -33,10 +34,20 @@ enum Command {
 impl FromStr for Command {
     type Err = Error;
     fn from_str(s: &str) -> Result<Command> {
-        match s.to_lowercase().as_ref() {
-            "c" | "continue" => Ok(Command::Continue),
-            "s" | "step" => Ok(Command::Step(1)),
-            _ => bail!("Command not Found"),
+        let mut args = s.split_whitespace();
+        if let Some(cmd) = args.next() {
+            match cmd.to_lowercase().as_ref() {
+                "c" | "continue" => Ok(Command::Continue),
+                "s" | "step" => {
+                    Ok(Command::Step(args.next()
+                        .unwrap_or("1")
+                        .parse()
+                        .chain_err(|| "Not a valid argument")?))
+                }
+                _ => Err("Command not Found".into()),
+            }
+        } else {
+            Ok(Command::Empty)
         }
     }
 }
@@ -213,24 +224,7 @@ impl Machine {
     fn readline(&self) -> Result<Command> {
         let mut buf = String::new();
         io::stdin().read_line(&mut buf).chain_err(|| "Error reading line")?;
-
-        let mut args = buf.split_whitespace();
-
-        let res = args.next()
-            .ok_or("No command found".into())
-            .and_then(|x| x.parse())?;
-
-        Ok(match args.next() {
-            Some(arg) => {
-                match res {
-                    Command::Step(_) => {
-                        Command::Step(arg.parse().chain_err(|| "Not a valid argument")?)
-                    }
-                    v => v,
-                }
-            }
-            None => res,
-        })
+        buf.parse()
     }
 
     fn debug(&mut self) -> Result<bool> {
@@ -253,6 +247,7 @@ impl Machine {
                             }
                             return Ok(true);
                         }
+                        Command::Empty => {}
                     }
                 }
                 Err(ref e) => {
