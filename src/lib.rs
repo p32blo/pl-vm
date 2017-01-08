@@ -26,6 +26,7 @@ use errors::*;
 
 
 enum Command {
+    Quit,
     Empty,
     Continue,
     Step(usize),
@@ -37,6 +38,7 @@ impl FromStr for Command {
         let mut args = s.split_whitespace();
         if let Some(cmd) = args.next() {
             match cmd.to_lowercase().as_ref() {
+                "q" | "quit" => Ok(Command::Quit),
                 "c" | "continue" => Ok(Command::Continue),
                 "s" | "step" => {
                     Ok(Command::Step(args.next()
@@ -234,6 +236,9 @@ impl Machine {
             match self.readline() {
                 Ok(cmd) => {
                     match cmd {
+                        Command::Quit => {
+                            ::std::process::exit(0);
+                        }
                         Command::Continue => {
                             return Ok(false);
                         }
