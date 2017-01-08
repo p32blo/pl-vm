@@ -38,7 +38,12 @@ enum Command {
     Quit,
     Empty,
     Continue,
+    Next(usize),
     Step(usize),
+    PrintRegisters,
+    PrintStack,
+    PrintCode,
+    PrintLabels,
 }
 
 impl FromStr for Command {
@@ -47,8 +52,18 @@ impl FromStr for Command {
         let mut args = s.split_whitespace();
         if let Some(cmd) = args.next() {
             match cmd.to_lowercase().as_ref() {
+                "regs" | "registers" => Ok(Command::PrintRegisters),
+                "st" | "stack" => Ok(Command::PrintStack),
+                "l" | "labels" => Ok(Command::PrintLabels),
+                "cd" | "code" => Ok(Command::PrintCode),
                 "q" | "quit" => Ok(Command::Quit),
                 "c" | "continue" => Ok(Command::Continue),
+                "n" | "next" => {
+                    Ok(Command::Next(args.next()
+                        .unwrap_or("1")
+                        .parse()
+                        .chain_err(|| "Not a valid argument")?))
+                }
                 "s" | "step" => {
                     Ok(Command::Step(args.next()
                         .unwrap_or("1")
@@ -152,7 +167,7 @@ impl Operand {
 }
 
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct Machine {
     /// Frame Pointer
     fp: usize,
@@ -170,21 +185,6 @@ struct Machine {
     strings: Vec<String>,
     /// Label Map
     labels: HashMap<String, usize>,
-}
-
-impl fmt::Debug for Machine {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "| sp: {:2} |", self.sp())?;
-        write!(f, " fp: {:2} |", self.fp)?;
-        write!(f, " pc: {:2} |", self.pc)?;
-        write!(f, " gp: {:2} |", self.gp)?;
-
-        write!(f, "\nstack:\n")?;
-        for val in &self.stack {
-            write!(f, "{:?} ", val)?;
-        }
-        Ok(())
-    }
 }
 
 impl Machine {
@@ -245,17 +245,55 @@ impl Machine {
             match self.readline() {
                 Ok(cmd) => {
                     match cmd {
+                        Command::PrintCode => {
+                            println!("code:");
+                            for (i, line) in self.code.iter().enumerate() {
+                                println!(" {:2}: {}", i, line);
+                            }
+                        }
+                        Command::PrintLabels => {
+                            println!("labels:");
+                            for (k, val) in &self.labels {
+                                println!(" | {} => {}", k, val);
+                            }
+                        }
+                        Command::PrintRegisters => {
+                            print!("registeres: ");
+                            print!(" sp = {:2} |", self.sp());
+                            print!(" fp = {:2} |", self.fp);
+                            print!(" pc = {:2} |", self.pc);
+                            print!(" gp = {:2} |", self.gp);
+                            println!();
+                        }
+                        Command::PrintStack => {
+                            println!("stack:");
+                            for val in self.stack.iter().rev() {
+                                println!("{:?} ", val);
+                            }
+                            println!();
+                        }
                         Command::Quit => {
                             ::std::process::exit(0);
                         }
                         Command::Continue => {
                             return Ok(Mode::Running);
                         }
+                        Command::Next(end) => {
+                            let mut bk = self.clone();
+                            for _ in 0..end {
+                                let instr = bk.get_instruction();
+                                println!("\t: {} :", instr);
+                                if let Status::Exit = bk.run_instruction(&instr)? {
+                                    break;
+                                }
+                            }
+                            return Ok(Mode::Debug);
+                        }
                         Command::Step(end) => {
                             for _ in 0..end {
                                 let instr = self.get_instruction();
                                 println!("\t< {} >", instr);
-                                if let Status::Exit = self.run_instruction(instr)? {
+                                if let Status::Exit = self.run_instruction(&instr)? {
                                     break;
                                 }
                             }
@@ -265,7 +303,7 @@ impl Machine {
                     }
                 }
                 Err(ref e) => {
-                    print!("error: {}. ", e);
+                    print!("\t{}. ", e);
                     for e in e.iter().skip(1) {
                         print!("{}. ", e);
                     }
@@ -282,21 +320,17 @@ impl Machine {
                 Mode::Debug => mode = self.debug()?,
                 Mode::Running => {
                     let instr = self.get_instruction();
-                    if let Status::Exit = self.run_instruction(instr)? {
+                    if let Status::Exit = self.run_instruction(&instr)? {
                         break;
                     }
-                    // io::stdin().read_line(&mut String::new()).unwrap();
-                    // println!("<{:^8}>", _inst);
-                    // println!("{:?}", *self)
-                    // println!("code: {:#?}\nlabels: {:#?}", self.code, self.labels);}
                 }
             }
         }
         Ok(())
     }
 
-    fn run_instruction(&mut self, instr: String) -> Result<Status> {
-        let (inst, val) = Self::decode(&instr);
+    fn run_instruction(&mut self, instr: &str) -> Result<Status> {
+        let (inst, val) = Self::decode(instr);
         let val_err = &format!("No value found for '{}' instruction", inst);
         // println!("instr: <{:?}>", (&inst, &val));
 
