@@ -1,6 +1,3 @@
-
-#![recursion_limit = "1024"]
-
 #[macro_use]
 extern crate error_chain;
 extern crate unescape;
@@ -29,7 +26,7 @@ enum Status {
     Exit,
 }
 
-enum Mode {
+pub enum Mode {
     Debug,
     Running,
 }
@@ -238,7 +235,7 @@ impl Machine {
         buf.parse()
     }
 
-    fn debug(&mut self) -> Result<Mode> {
+    fn run_debug(&mut self) -> Result<()> {
         loop {
             print!("(debug) ");
             io::stdout().flush().expect("Could not flush stdout");
@@ -282,7 +279,7 @@ impl Machine {
                             ::std::process::exit(0);
                         }
                         Command::Continue => {
-                            return Ok(Mode::Running);
+                            return self.run();
                         }
                         Command::Next(end) => {
                             let mut bk = self.clone();
@@ -293,7 +290,6 @@ impl Machine {
                                     break;
                                 }
                             }
-                            return Ok(Mode::Debug);
                         }
                         Command::Step(end) => {
                             for _ in 0..end {
@@ -303,7 +299,6 @@ impl Machine {
                                     break;
                                 }
                             }
-                            return Ok(Mode::Debug);
                         }
                         Command::Empty => {}
                     }
@@ -320,16 +315,10 @@ impl Machine {
     }
 
     fn run(&mut self) -> Result<()> {
-        let mut mode = Mode::Debug;
         loop {
-            match mode {
-                Mode::Debug => mode = self.debug()?,
-                Mode::Running => {
-                    let instr = self.get_instruction();
-                    if let Status::Exit = self.run_instruction(&instr)? {
-                        break;
-                    }
-                }
+            let instr = self.get_instruction();
+            if let Status::Exit = self.run_instruction(&instr)? {
+                break;
             }
         }
         Ok(())
@@ -633,11 +622,14 @@ impl Machine {
     }
 }
 
-
-pub fn start<P: AsRef<Path>>(path: P) -> Result<()> {
+pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     let mut m = Machine::new();
     m.load(&path).chain_err(|| format!("Cannot load file '{}'", path.as_ref().display()))?;
     // println!("{:#?}", m);
-    m.run()?;
+    match mode {
+        Mode::Running => m.run()?,
+        Mode::Debug => m.run_debug()?,
+    }
+
     Ok(())
 }
