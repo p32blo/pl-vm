@@ -1,5 +1,5 @@
-#[macro_use]
-extern crate error_chain;
+
+
 extern crate unescape;
 
 use std::io;
@@ -19,7 +19,7 @@ mod errors {
     error_chain!{}
 }
 
-use errors::*;
+use self::errors::*;
 
 enum Status {
     Success,

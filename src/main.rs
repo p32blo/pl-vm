@@ -1,9 +1,12 @@
 
-extern crate vm;
-extern crate clap;
+#[macro_use]
+extern crate error_chain;
 
-use vm::Mode;
+extern crate clap;
 use clap::{App, Arg};
+
+mod vm;
+use vm::Mode;
 
 fn main() {
     let matches = App::new("vm")
