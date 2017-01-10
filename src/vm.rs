@@ -192,6 +192,123 @@ impl Operand {
     }
 }
 
+#[derive(Debug)]
+enum Instruction {
+    Pushi(i32),
+    Pushn(i32),
+    Pushg(usize),
+    Pushs(String),
+    Pusha(String),
+    Pushgp,
+    Call,
+    Return,
+    Start,
+    Nop,
+    Stop,
+    Loadn,
+    Writei,
+    Writes,
+    Read,
+    Atoi,
+    Padd,
+    Add,
+    Mul,
+    Div,
+    Mod,
+    Storeg(usize),
+    Storen,
+    Equal,
+    Inf,
+    Infeq,
+    Sup,
+    Supeq,
+    Jump(String),
+    Jz(String),
+    Err(String),
+}
+
+impl Instruction {
+    fn decode(inst_ref: &str) -> (String, Option<String>) {
+        let find = inst_ref.find(' ');
+        match find {
+            None => (inst_ref.to_string(), None),
+            Some(f) => {
+                let (inst, val) = inst_ref.split_at(f);
+                (inst.to_string(), Some(val.trim().to_string()))
+            }
+        }
+    }
+
+    fn remove_quotes(string: &str) -> String {
+        let mut val = string.to_string();
+
+        // Assumes well formed strings with both quotes
+        val.remove(0);
+        val.pop().unwrap();
+
+        unescape::unescape(&val).unwrap()
+    }
+}
+
+impl FromStr for Instruction {
+    type Err = Error;
+    fn from_str(instr: &str) -> Result<Instruction> {
+        let (inst, val) = Self::decode(instr);
+        let val_err = &format!("No value found for '{}' instruction", inst);
+        Ok(match inst.as_ref() {
+            "pushi" => {
+                Instruction::Pushi(val.expect(val_err)
+                    .parse()
+                    .expect("value is not a positive integer"))
+            }
+            "pushn" => {
+                Instruction::Pushn(val.expect(val_err)
+                    .parse()
+                    .expect("value is not a positive integer"))
+            }
+            "pushg" => {
+                Instruction::Pushg(val.expect(val_err)
+                    .parse()
+                    .expect("value is not a positive integer"))
+            }
+            "pushs" => Instruction::Pushs(Self::remove_quotes(&val.expect(val_err))),
+            "pusha" => Instruction::Pusha(val.expect(val_err)),
+            "pushgp" => Instruction::Pushgp,
+            "call" => Instruction::Call,
+            "return" => Instruction::Return,
+            "start" => Instruction::Start,
+            "nop" => Instruction::Nop,
+            "stop" => Instruction::Stop,
+            "loadn" => Instruction::Loadn,
+            "writei" => Instruction::Writei,
+            "writes" => Instruction::Writes,
+            "read" => Instruction::Read,
+            "atoi" => Instruction::Atoi,
+            "padd" => Instruction::Padd,
+            "add" => Instruction::Add,
+            "mul" => Instruction::Mul,
+            "div" => Instruction::Div,
+            "mod" => Instruction::Mod,
+            "storeg" => {
+                Instruction::Storeg(val.expect(val_err)
+                    .parse()
+                    .expect("value is not a positive integer"))
+            }
+            "storen" => Instruction::Storen,
+            "equal" => Instruction::Equal,
+            "inf" => Instruction::Inf,
+            "infeq" => Instruction::Infeq,
+            "sup" => Instruction::Sup,
+            "supeq" => Instruction::Supeq,
+            "jump" => Instruction::Jump(val.expect(val_err)),
+            "jz" => Instruction::Jz(val.expect(val_err)),
+            "err" => Instruction::Err(Self::remove_quotes(&val.expect(val_err))),
+            _ => panic!(format!("Instruction not found: {}", inst)),
+        })
+    }
+}
+
+
 
 #[derive(Default, Clone)]
 struct Machine {
@@ -222,28 +339,41 @@ impl Machine {
         let mut f = File::open(path).chain_err(|| "Failed to open file")?;
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).chain_err(|| "Unable to Read file")?;
-        self.code = buffer.lines()
+        let code = buffer.lines()
             .map(|x| Self::remove_comments(&x.trim().to_lowercase()))
-            .filter(|x| !x.is_empty())
-            .collect();
+            .filter(|x| !x.is_empty());
 
-        for (i, line) in self.code.iter().enumerate() {
-            if Self::is_label(line) {
-                let mut label = line.to_string();
-                label.pop().unwrap();
-                self.labels.insert(label, i);
-            }
-        }
+        let mut labels = Vec::new();
+        let mut acc = 0;
+        self.code = code.enumerate()
+            .inspect(|&(i, ref line)| {
+                match Self::is_label(&line) {
+                    Some(label) => {
+                        labels.push(label.to_string());
+                        acc += 1;
+                    }
+                    None => {
+                        for label in labels.drain(..) {
+                            self.labels.insert(label.to_string(), i - acc);
+                        }
+                    }
+                }
+            })
+            .filter_map(|(_, line)| match Self::is_label(&line) {
+                Some(_) => None,
+                None => Some(line),
+            })
+            .collect();
         Ok(())
     }
 
-    fn is_label(line: &str) -> bool {
-        if let Some(inst) = line.split_whitespace().next() {
-            if inst.contains(':') {
-                return true;
-            }
+    fn is_label(line: &str) -> Option<String> {
+        let mut inst = line.to_string();
+        if inst.ends_with(':') {
+            inst.pop().unwrap();
+            return Some(inst);
         }
-        false
+        None
     }
 
     fn sp(&self) -> usize {
@@ -274,7 +404,10 @@ impl Machine {
                         Command::PrintCode => {
                             println!("code:");
                             for (i, line) in self.code.iter().enumerate() {
-                                println!(" {:2}: {}", i, line);
+                                for (k, _) in self.labels.iter().filter(|&(_, &v)| v == i) {
+                                    println!("{}:", k);
+                                }
+                                println!("\t{}", line);
                             }
                         }
                         Command::PrintLabels => {
@@ -310,18 +443,18 @@ impl Machine {
                         Command::Next(end) => {
                             let mut bk = self.clone();
                             for _ in 0..end {
-                                let instr = bk.get_instruction();
-                                println!("\t: {} :", instr);
-                                if let Status::Exit = bk.run_instruction(&instr)? {
+                                let instr = bk.get_instruction().parse()?;
+                                println!("\t: {:?} :", instr);
+                                if let Status::Exit = bk.run_instruction(instr)? {
                                     break;
                                 }
                             }
                         }
                         Command::Step(end) => {
                             for _ in 0..end {
-                                let instr = self.get_instruction();
-                                println!("\t< {} >", instr);
-                                if let Status::Exit = self.run_instruction(&instr)? {
+                                let instr = self.get_instruction().parse()?;
+                                println!("\t< {:?} >", instr);
+                                if let Status::Exit = self.run_instruction(instr)? {
                                     break;
                                 }
                             }
@@ -348,72 +481,46 @@ impl Machine {
 
     fn run(&mut self) -> Result<()> {
         loop {
-            let instr = self.get_instruction();
-            if let Status::Exit = self.run_instruction(&instr)? {
+            let instr = self.get_instruction().parse()?;
+            if let Status::Exit = self.run_instruction(instr)? {
                 break;
             }
         }
         Ok(())
     }
 
-    fn run_instruction(&mut self, instr: &str) -> Result<Status> {
-        let (inst, val) = Self::decode(instr);
-        let val_err = &format!("No value found for '{}' instruction", inst);
-        // println!("instr: <{:?}>", (&inst, &val));
-
-        if !Self::is_label(&inst) {
-            match inst.as_ref() {
-                "pushi" => {
-                    self.pushi(val.expect(val_err)
-                        .parse()
-                        .expect("value is not a positive integer"))
-                }
-                "pushn" => {
-                    self.pushn(val.expect(val_err)
-                        .parse()
-                        .expect("value is not a positive integer"))
-                }
-                "pushg" => {
-                    self.pushg(val.expect(val_err)
-                        .parse()
-                        .expect("value is not a positive integer"))
-                }
-                "pushs" => self.pushs(&val.expect(val_err)),
-                "pusha" => self.pusha(&val.expect(val_err)),
-                "pushgp" => self.pushgp(),
-                "call" => self.call(),
-                "return" => self.ret(),
-                "start" | "nop" => {}
-                "stop" => return Ok(Status::Exit),
-                "loadn" => self.loadn(),
-                "writei" => self.writei(),
-                "writes" => self.writes(),
-                "read" => self.read()?,
-                "atoi" => self.atoi()?,
-                "padd" => self.padd(),
-                "add" => self.add(),
-                "mul" => self.mul(),
-                "div" => self.div(),
-                "mod" => self.module(),
-                "storeg" => {
-                    self.storeg(val.expect(val_err)
-                        .parse()
-                        .expect("value is not a positive integer"))
-                }
-                "storen" => self.storen(),
-                "equal" => self.equal(),
-                "inf" => self.inf(),
-                "infeq" => self.infeq(),
-                "sup" => self.sup(),
-                "supeq" => self.supeq(),
-                "jump" => self.jump(&val.expect(val_err)),
-                "jz" => self.jz(&val.expect(val_err)),
-                "err" => {
-                    let err = Self::remove_quotes(&val.expect(val_err));
-                    bail!(format!("End execution with [{}]", err))
-                }
-                _ => panic!(format!("Instruction not found: {}", inst)),
-            }
+    fn run_instruction(&mut self, inst: Instruction) -> Result<Status> {
+        match inst {
+            Instruction::Pushi(val) => self.pushi(val),
+            Instruction::Pushn(val) => self.pushn(val),
+            Instruction::Pushg(val) => self.pushg(val),
+            Instruction::Pushs(val) => self.pushs(val),
+            Instruction::Pusha(val) => self.pusha(&val),
+            Instruction::Pushgp => self.pushgp(),
+            Instruction::Call => self.call(),
+            Instruction::Return => self.ret(),
+            Instruction::Start | Instruction::Nop => {}
+            Instruction::Stop => return Ok(Status::Exit),
+            Instruction::Loadn => self.loadn(),
+            Instruction::Writei => self.writei(),
+            Instruction::Writes => self.writes(),
+            Instruction::Read => self.read()?,
+            Instruction::Atoi => self.atoi()?,
+            Instruction::Padd => self.padd(),
+            Instruction::Add => self.add(),
+            Instruction::Mul => self.mul(),
+            Instruction::Div => self.div(),
+            Instruction::Mod => self.module(),
+            Instruction::Storeg(val) => self.storeg(val),
+            Instruction::Storen => self.storen(),
+            Instruction::Equal => self.equal(),
+            Instruction::Inf => self.inf(),
+            Instruction::Infeq => self.infeq(),
+            Instruction::Sup => self.sup(),
+            Instruction::Supeq => self.supeq(),
+            Instruction::Jump(val) => self.jump(&val),
+            Instruction::Jz(val) => self.jz(&val),
+            Instruction::Err(err) => bail!(format!("End execution with [{}]", err)),
         }
         self.pc += 1;
 
@@ -426,27 +533,6 @@ impl Machine {
             Some(f) => {
                 let (inst, _) = inst.split_at(f);
                 inst.trim().to_string()
-            }
-        }
-    }
-
-    fn remove_quotes(string: &str) -> String {
-        let mut val = string.to_string();
-
-        // Assumes well formed strings with both quotes
-        val.remove(0);
-        val.pop().unwrap();
-
-        unescape::unescape(&val).unwrap()
-    }
-
-    fn decode(inst_ref: &str) -> (String, Option<String>) {
-        let find = inst_ref.find(' ');
-        match find {
-            None => (inst_ref.to_string(), None),
-            Some(f) => {
-                let (inst, val) = inst_ref.split_at(f);
-                (inst.to_string(), Some(val.trim().to_string()))
             }
         }
     }
@@ -487,9 +573,7 @@ impl Machine {
         self.stack.push(value);
     }
 
-    fn pushs(&mut self, val: &str) {
-        let val = Self::remove_quotes(val);
-
+    fn pushs(&mut self, val: String) {
         if let Some(i) = self.strings.iter().position(|x| x == &val) {
             self.stack.push(Operand::Address(i));
         } else {
