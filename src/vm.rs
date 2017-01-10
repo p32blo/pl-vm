@@ -32,15 +32,37 @@ pub enum Mode {
 }
 
 enum Command {
-    Quit,
-    Empty,
-    Continue,
-    Next(usize),
+    Run,
     Step(usize),
+    Next(usize),
     PrintRegisters,
     PrintStack,
     PrintCode,
     PrintLabels,
+    Help,
+    Quit,
+    Empty,
+}
+
+impl Command {
+    fn help() {
+        let help = [("r, run", "Continue the execution"),
+                    ("s, step [NUMBER]", "Step by NUMBER instructions. NUMBER defaults to 1"),
+                    ("n, next [NUMBER]", "Show NUMBER instructions. NUMBER defaults to 1"),
+                    ("reg, registers", "Print the current value for the registers"),
+                    ("st, stack", "Print the current state of the stack"),
+                    ("c, code", "Print the code that is beeing run"),
+                    ("l, labels", "Print all labels found in the code"),
+                    ("h, help", "Print this message"),
+                    ("q, quit", "Exit from the debugger")];
+
+        println!();
+        println!("COMMANDS:");
+        for &(cmd, msg) in &help {
+            println!("\t{:20}{}", cmd, msg);
+        }
+        println!("")
+    }
 }
 
 impl FromStr for Command {
@@ -48,13 +70,14 @@ impl FromStr for Command {
     fn from_str(s: &str) -> Result<Command> {
         let mut args = s.split_whitespace();
         if let Some(cmd) = args.next() {
-            match cmd.to_lowercase().as_ref() {
-                "regs" | "registers" => Ok(Command::PrintRegisters),
+            let res = match cmd.to_lowercase().as_ref() {
+                "reg" | "registers" => Ok(Command::PrintRegisters),
                 "st" | "stack" => Ok(Command::PrintStack),
                 "l" | "labels" => Ok(Command::PrintLabels),
-                "cd" | "code" => Ok(Command::PrintCode),
+                "c" | "code" => Ok(Command::PrintCode),
+                "h" | "help" => Ok(Command::Help),
                 "q" | "quit" => Ok(Command::Quit),
-                "c" | "continue" => Ok(Command::Continue),
+                "r" | "run" => Ok(Command::Run),
                 "n" | "next" => {
                     Ok(Command::Next(args.next()
                         .unwrap_or("1")
@@ -67,8 +90,14 @@ impl FromStr for Command {
                         .parse()
                         .chain_err(|| "Not a valid argument")?))
                 }
-                _ => Err("Command not Found".into()),
+                _ => Err("Command not Found. Try 'help' to find valid commands".into()),
+            };
+
+            match args.next() {
+                None => res,
+                Some(_) => res.and(Err("Invalid argument. See 'help' for usage".into())),
             }
+
         } else {
             Ok(Command::Empty)
         }
@@ -275,10 +304,7 @@ impl Machine {
                                 println!();
                             }
                         }
-                        Command::Quit => {
-                            ::std::process::exit(0);
-                        }
-                        Command::Continue => {
+                        Command::Run => {
                             return self.run();
                         }
                         Command::Next(end) => {
@@ -300,11 +326,17 @@ impl Machine {
                                 }
                             }
                         }
+                        Command::Help => {
+                            Command::help();
+                        }
+                        Command::Quit => {
+                            ::std::process::exit(0);
+                        }
                         Command::Empty => {}
                     }
                 }
                 Err(ref e) => {
-                    print!("\terror: {}. ", e);
+                    print!("\t{}. ", e);
                     for e in e.iter().skip(1) {
                         print!("{}. ", e);
                     }
