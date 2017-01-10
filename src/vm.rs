@@ -192,7 +192,7 @@ impl Operand {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum Instruction {
     Pushi(i32),
     Pushn(i32),
@@ -247,6 +247,13 @@ impl Instruction {
         val.pop().unwrap();
 
         unescape::unescape(&val).unwrap()
+    }
+
+    fn write_ln(&self) {
+        match *self {
+            Instruction::Writei | Instruction::Writes => println!(),
+            _ => {}
+        }
     }
 }
 
@@ -450,18 +457,20 @@ impl Machine {
                             for _ in 0..end {
                                 let instr = bk.get_instruction().parse()?;
                                 println!("\t: {:?} :", instr);
-                                if let Status::Exit = bk.run_instruction(instr)? {
+                                if let Status::Exit = bk.run_instruction(&instr)? {
                                     break;
                                 }
+                                instr.write_ln();
                             }
                         }
                         Command::Step(end) => {
                             for _ in 0..end {
                                 let instr = self.get_instruction().parse()?;
                                 println!("\t< {:?} >", instr);
-                                if let Status::Exit = self.run_instruction(instr)? {
+                                if let Status::Exit = self.run_instruction(&instr)? {
                                     break;
                                 }
+                                instr.write_ln();
                             }
                         }
                         Command::Help => {
@@ -487,20 +496,20 @@ impl Machine {
     fn run(&mut self) -> Result<()> {
         loop {
             let instr = self.get_instruction().parse()?;
-            if let Status::Exit = self.run_instruction(instr)? {
+            if let Status::Exit = self.run_instruction(&instr)? {
                 break;
             }
         }
         Ok(())
     }
 
-    fn run_instruction(&mut self, inst: Instruction) -> Result<Status> {
-        match inst {
+    fn run_instruction(&mut self, inst: &Instruction) -> Result<Status> {
+        match *inst {
             Instruction::Pushi(val) => self.pushi(val),
             Instruction::Pushn(val) => self.pushn(val),
             Instruction::Pushg(val) => self.pushg(val),
-            Instruction::Pushs(val) => self.pushs(val),
-            Instruction::Pusha(val) => self.pusha(&val),
+            Instruction::Pushs(ref val) => self.pushs(val),
+            Instruction::Pusha(ref val) => self.pusha(val),
             Instruction::Pushgp => self.pushgp(),
             Instruction::Call => self.call(),
             Instruction::Return => self.ret(),
@@ -524,9 +533,9 @@ impl Machine {
             Instruction::Infeq => self.infeq(),
             Instruction::Sup => self.sup(),
             Instruction::Supeq => self.supeq(),
-            Instruction::Jump(val) => self.jump(&val),
-            Instruction::Jz(val) => self.jz(&val),
-            Instruction::Err(err) => bail!(format!("End execution with [{}]", err)),
+            Instruction::Jump(ref val) => self.jump(val),
+            Instruction::Jz(ref val) => self.jz(val),
+            Instruction::Err(ref err) => bail!(format!("End execution with [{}]", err)),
         }
         self.pc += 1;
 
@@ -573,11 +582,11 @@ impl Machine {
         self.stack.push(value);
     }
 
-    fn pushs(&mut self, val: String) {
+    fn pushs(&mut self, val: &str) {
         if let Some(i) = self.strings.iter().position(|x| x == &val) {
             self.stack.push(Operand::Address(i));
         } else {
-            self.strings.push(val);
+            self.strings.push(val.to_string());
             self.stack.push(Operand::Address(self.strings.len() - 1));
         }
     }
