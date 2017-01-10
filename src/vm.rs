@@ -336,34 +336,36 @@ impl Machine {
     }
 
     fn load<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+        // Open file
         let mut f = File::open(path).chain_err(|| "Failed to open file")?;
+
+        // Load file to memory
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).chain_err(|| "Unable to Read file")?;
-        let code = buffer.lines()
-            .map(|x| Self::remove_comments(&x.trim().to_lowercase()))
-            .filter(|x| !x.is_empty());
 
-        let mut labels = Vec::new();
-        let mut acc = 0;
-        self.code = code.enumerate()
-            .inspect(|&(i, ref line)| {
-                match Self::is_label(&line) {
-                    Some(label) => {
-                        labels.push(label.to_string());
-                        acc += 1;
-                    }
-                    None => {
-                        for label in labels.drain(..) {
-                            self.labels.insert(label.to_string(), i - acc);
-                        }
-                    }
-                }
-            })
-            .filter_map(|(_, line)| match Self::is_label(&line) {
-                Some(_) => None,
-                None => Some(line),
-            })
+        // Strip comments and remove empty lines
+        let code_labels: Vec<String> = buffer.lines()
+            .map(|x| Self::strip_comments(&x.trim().to_lowercase()))
+            .filter(|x| !x.is_empty())
             .collect();
+
+        // inserted labels so far
+        let mut acc = 0;
+
+        // insert labels with the correct pointer
+        for (i, line) in code_labels.iter().enumerate() {
+            if let Some(val) = Self::is_label(&line) {
+                self.labels.insert(val, i - acc);
+                acc += 1;
+            }
+        }
+
+        // remove labels from code
+        self.code = code_labels.iter()
+            .filter(|line| Self::is_label(&line).is_none())
+            .cloned()
+            .collect();
+
         Ok(())
     }
 
@@ -377,7 +379,7 @@ impl Machine {
     }
 
     fn sp(&self) -> usize {
-        self.stack.len() - 1
+        self.stack.len()
     }
 
     fn stack_pop(&mut self) -> Operand {
@@ -402,22 +404,22 @@ impl Machine {
                 Ok(cmd) => {
                     match cmd {
                         Command::PrintCode => {
-                            println!("code:");
+                            println!("\t/// CODE ///");
                             for (i, line) in self.code.iter().enumerate() {
                                 for (k, _) in self.labels.iter().filter(|&(_, &v)| v == i) {
                                     println!("{}:", k);
                                 }
-                                println!("\t{}", line);
+                                println!("  {:>2}|\t{}", i, line);
                             }
                         }
                         Command::PrintLabels => {
-                            println!("labels:");
+                            println!("Labels:");
                             for (k, val) in &self.labels {
                                 println!(" | {} => {}", k, val);
                             }
                         }
                         Command::PrintRegisters => {
-                            print!("registeres: ");
+                            print!("Registeres: ");
                             print!(" sp = {:2} |", self.sp());
                             print!(" fp = {:2} |", self.fp);
                             print!(" pc = {:2} |", self.pc);
@@ -425,14 +427,17 @@ impl Machine {
                             println!();
                         }
                         Command::PrintStack => {
-                            println!("stack:");
+                            println!("Stack:");
+                            print!("--- <- sp");
+                            if self.fp == self.sp() {
+                                print!(" <- fp");
+                            }
+                            println!();
+
                             for (i, val) in self.stack.iter().enumerate().rev() {
-                                print!("{:?} ", val);
-                                if i == self.fp {
-                                    print!("<- fp");
-                                }
-                                if i == self.sp() {
-                                    print!("<- sp");
+                                print!("{:?}", val);
+                                if self.fp == i {
+                                    print!(" <- fp");
                                 }
                                 println!();
                             }
@@ -499,7 +504,8 @@ impl Machine {
             Instruction::Pushgp => self.pushgp(),
             Instruction::Call => self.call(),
             Instruction::Return => self.ret(),
-            Instruction::Start | Instruction::Nop => {}
+            Instruction::Start => self.start(),
+            Instruction::Nop => {}
             Instruction::Stop => return Ok(Status::Exit),
             Instruction::Loadn => self.loadn(),
             Instruction::Writei => self.writei(),
@@ -527,7 +533,7 @@ impl Machine {
         Ok(Status::Success)
     }
 
-    fn remove_comments(inst: &str) -> String {
+    fn strip_comments(inst: &str) -> String {
         match inst.find("//") {
             None => inst.to_string(),
             Some(f) => {
@@ -537,14 +543,8 @@ impl Machine {
         }
     }
 
-    fn get_instruction(&mut self) -> String {
-        let mut inst = &self.code[self.pc];
-
-        while inst.is_empty() {
-            self.pc += 1;
-            inst = &self.code[self.pc];
-        }
-        inst.to_string()
+    fn get_instruction(&mut self) -> &str {
+        &self.code[self.pc]
     }
 
     fn pushi(&mut self, val: i32) {
@@ -583,8 +583,12 @@ impl Machine {
     }
 
     fn pusha(&mut self, val: &str) {
-        let addr = self.labels[val];
+        let addr = self.labels[val] - 1;
         self.stack.push(Operand::Address(addr));
+    }
+
+    fn start(&mut self) {
+        self.fp = self.sp();
     }
 
     fn loadn(&mut self) {
@@ -724,7 +728,7 @@ impl Machine {
     }
 
     fn jump(&mut self, val: &str) {
-        self.pc = self.labels[val];
+        self.pc = self.labels[val] - 1;
     }
 
     fn jz(&mut self, val: &str) {
