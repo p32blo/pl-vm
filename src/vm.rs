@@ -199,8 +199,12 @@ impl Machine {
     }
 
     fn run_debug(&mut self) -> Result<()> {
+        let mut status = Status::Success;
         loop {
-            print!("(debug) ");
+            match status {
+                Status::Success => print!("(debug) "),
+                Status::Exit => print!("(debug - finished) "),
+            }
             io::stdout().flush().expect("Could not flush stdout");
             match self.readline() {
                 Ok(cmd) => {
@@ -245,27 +249,37 @@ impl Machine {
                             }
                         }
                         Command::Run => {
-                            return self.run();
+                            if let Status::Success = status {
+                                self.run()?;
+                                println!();
+                                status = Status::Exit;
+                            }
                         }
                         Command::Next(end) => {
-                            let mut bk = self.clone();
-                            for _ in 0..end {
-                                let instr = bk.get_instruction();
-                                println!("\t: {} :", instr);
-                                if let Status::Exit = bk.run_instruction(&instr)? {
-                                    break;
+                            if let Status::Success = status {
+                                let mut bk = self.clone();
+                                for _ in 0..end {
+                                    let instr = bk.get_instruction();
+                                    println!("\t: {} :", instr);
+                                    if let Status::Exit = bk.run_instruction(&instr)? {
+                                        status = Status::Exit;
+                                        break;
+                                    }
+                                    instr.write_ln();
                                 }
-                                instr.write_ln();
                             }
                         } 
                         Command::Step(end) => {
-                            for _ in 0..end {
-                                let instr = &self.get_instruction();
-                                println!("\t< {} >", instr);
-                                if let Status::Exit = self.run_instruction(instr)? {
-                                    break;
+                            if let Status::Success = status {
+                                for _ in 0..end {
+                                    let instr = &self.get_instruction();
+                                    println!("\t< {} >", instr);
+                                    if let Status::Exit = self.run_instruction(instr)? {
+                                        status = Status::Exit;
+                                        break;
+                                    }
+                                    instr.write_ln();
                                 }
-                                instr.write_ln();
                             }
                         }
                         Command::Help => {
