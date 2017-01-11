@@ -31,7 +31,7 @@ pub mod errors {
 }
 
 fn main() {
-    let matches = App::new("vm")
+    let matches = App::new("pl-vm")
         .about("A simple vm with debugger")
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))

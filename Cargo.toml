@@ -1,5 +1,5 @@
 [package]
-name = "vm"
+name = "pl-vm"
 version = "0.1.0"
 authors = ["André Oliveira <p32blo@gmail.com>"]
 
