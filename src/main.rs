@@ -34,7 +34,6 @@ fn main() {
     if let Some(file) = matches.value_of("input") {
         // There are errors running the vm
         if let Err(ref e) = vm::start(&file, mode) {
-            println!();
             println!("error: {}", e);
             for e in e.iter().skip(1) {
                 println!("caused by: {}", e);

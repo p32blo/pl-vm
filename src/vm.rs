@@ -198,6 +198,100 @@ impl Machine {
         buf.parse()
     }
 
+    fn debug(&mut self, cmd: Command, status: Status) -> Result<Status> {
+        match cmd {
+            Command::PrintCode => {
+                println!("\t/// CODE ///");
+                for (i, line) in self.code.iter().enumerate() {
+                    for (k, _) in self.labels.iter().filter(|&(_, &v)| v == i) {
+                        println!("{}:", k);
+                    }
+                    println!("  {:>2}|\t{}", i, line);
+                }
+                Ok(status)
+            }
+            Command::PrintLabels => {
+                println!("Labels:");
+                for (k, val) in &self.labels {
+                    println!(" | {} => {}", k, val);
+                }
+                Ok(status)
+            }
+            Command::PrintRegisters => {
+                print!("Registeres: ");
+                print!(" sp = {:2} |", self.sp());
+                print!(" fp = {:2} |", self.fp);
+                print!(" pc = {:2} |", self.pc);
+                print!(" gp = {:2} |", self.gp);
+                println!();
+                Ok(status)
+            }
+            Command::PrintStack => {
+                println!("Stack:");
+                print!("--- <- sp");
+                if self.fp == self.sp() {
+                    print!(" <- fp");
+                }
+                println!();
+
+                for (i, val) in self.stack.iter().enumerate().rev() {
+                    print!("{}", val);
+                    if self.fp == i {
+                        print!(" <- fp");
+                    }
+                    println!();
+                }
+                Ok(status)
+            }
+            Command::Run => {
+                Ok(match status {
+                    Status::Success => {
+                        self.run()?;
+                        println!();
+                        Status::Exit
+                    }
+                    Status::Exit => status,
+                })
+            }
+            Command::Next(end) => {
+                if let Status::Success = status {
+                    let mut bk = self.clone();
+                    for _ in 0..end {
+                        let instr = bk.get_instruction();
+                        println!("\t: {} :", instr);
+                        if let Status::Exit = bk.run_instruction(&instr)? {
+                            break;
+                        }
+                        instr.write_ln();
+                    }
+                }
+                Ok(status)
+            } 
+            Command::Step(end) => {
+                if let Status::Success = status {
+                    for _ in 0..end {
+                        let instr = &self.get_instruction();
+                        println!("\t< {} >", instr);
+                        let s = self.run_instruction(instr)?;
+                        instr.write_ln();
+                        if let Status::Exit = s {
+                            return Ok(s);
+                        }
+                    }
+                }
+                Ok(status)
+            }
+            Command::Help => {
+                Command::help();
+                Ok(status)
+            }
+            Command::Quit => {
+                ::std::process::exit(0);
+            }
+            Command::Empty => Ok(status),
+        }
+    }
+
     fn run_debug(&mut self) -> Result<()> {
         let mut status = Status::Success;
         loop {
@@ -206,98 +300,16 @@ impl Machine {
                 Status::Exit => print!("(debug - finished) "),
             }
             io::stdout().flush().expect("Could not flush stdout");
-            match self.readline() {
-                Ok(cmd) => {
-                    match cmd {
-                        Command::PrintCode => {
-                            println!("\t/// CODE ///");
-                            for (i, line) in self.code.iter().enumerate() {
-                                for (k, _) in self.labels.iter().filter(|&(_, &v)| v == i) {
-                                    println!("{}:", k);
-                                }
-                                println!("  {:>2}|\t{}", i, line);
-                            }
-                        }
-                        Command::PrintLabels => {
-                            println!("Labels:");
-                            for (k, val) in &self.labels {
-                                println!(" | {} => {}", k, val);
-                            }
-                        }
-                        Command::PrintRegisters => {
-                            print!("Registeres: ");
-                            print!(" sp = {:2} |", self.sp());
-                            print!(" fp = {:2} |", self.fp);
-                            print!(" pc = {:2} |", self.pc);
-                            print!(" gp = {:2} |", self.gp);
-                            println!();
-                        }
-                        Command::PrintStack => {
-                            println!("Stack:");
-                            print!("--- <- sp");
-                            if self.fp == self.sp() {
-                                print!(" <- fp");
-                            }
-                            println!();
-
-                            for (i, val) in self.stack.iter().enumerate().rev() {
-                                print!("{}", val);
-                                if self.fp == i {
-                                    print!(" <- fp");
-                                }
-                                println!();
-                            }
-                        }
-                        Command::Run => {
-                            if let Status::Success = status {
-                                self.run()?;
-                                println!();
-                                status = Status::Exit;
-                            }
-                        }
-                        Command::Next(end) => {
-                            if let Status::Success = status {
-                                let mut bk = self.clone();
-                                for _ in 0..end {
-                                    let instr = bk.get_instruction();
-                                    println!("\t: {} :", instr);
-                                    if let Status::Exit = bk.run_instruction(&instr)? {
-                                        break;
-                                    }
-                                    instr.write_ln();
-                                }
-                            }
-                        } 
-                        Command::Step(end) => {
-                            if let Status::Success = status {
-                                for _ in 0..end {
-                                    let instr = &self.get_instruction();
-                                    println!("\t< {} >", instr);
-                                    if let Status::Exit = self.run_instruction(instr)? {
-                                        status = Status::Exit;
-                                        break;
-                                    }
-                                    instr.write_ln();
-                                }
-                            }
-                        }
-                        Command::Help => {
-                            Command::help();
-                        }
-                        Command::Quit => {
-                            ::std::process::exit(0);
-                        }
-                        Command::Empty => {}
-                    }
-                }
-                Err(ref e) => {
+            status = self.readline()
+                .and_then(|cmd| self.debug(cmd, status))
+                .unwrap_or_else(|ref e| {
                     print!("\t{}. ", e);
                     for e in e.iter().skip(1) {
                         print!("{}. ", e);
                     }
                     println!();
-                }
-            }
+                    Status::Exit
+                });
         }
     }
 
