@@ -261,25 +261,23 @@ impl FromStr for Instruction {
     type Err = Error;
     fn from_str(instr: &str) -> Result<Instruction> {
         let (inst, val) = Self::decode(instr);
-        let val_err = &format!("No value found for '{}' instruction", inst);
-        Ok(match inst.as_ref() {
-            "pushi" => {
-                Instruction::Pushi(val.expect(val_err)
-                    .parse()
-                    .expect("value is not a positive integer"))
-            }
-            "pushn" => {
-                Instruction::Pushn(val.expect(val_err)
-                    .parse()
-                    .expect("value is not a positive integer"))
-            }
-            "pushg" => {
-                Instruction::Pushg(val.expect(val_err)
-                    .parse()
-                    .expect("value is not a positive integer"))
-            }
-            "pushs" => Instruction::Pushs(Self::remove_quotes(&val.expect(val_err))),
-            "pusha" => Instruction::Pusha(val.expect(val_err)),
+
+        let val_s = |val: Option<String>| -> Result<String> {
+            val.ok_or(format!("No value found for '{}' instruction", inst).into())
+        };
+        let val_i = |val_s: Result<String>| -> Result<i32> {
+            val_s.and_then(|x| x.parse().chain_err(|| "value is not a integer"))
+        };
+        let val_u = |val_s: Result<String>| -> Result<usize> {
+            val_s.and_then(|x| x.parse::<usize>().chain_err(|| "value is not a positive integer"))
+        };
+
+        let res = match inst.as_ref() {
+            "pushi" => Instruction::Pushi(val_i(val_s(val))?),
+            "pushn" => Instruction::Pushn(val_i(val_s(val))?),
+            "pushg" => Instruction::Pushg(val_u(val_s(val))?),
+            "pushs" => Instruction::Pushs(Self::remove_quotes(&val_s(val)?)),
+            "pusha" => Instruction::Pusha(val_s(val)?),
             "pushgp" => Instruction::Pushgp,
             "call" => Instruction::Call,
             "return" => Instruction::Return,
@@ -290,28 +288,25 @@ impl FromStr for Instruction {
             "writei" => Instruction::Writei,
             "writes" => Instruction::Writes,
             "read" => Instruction::Read,
-            "atoi" => Instruction::Atoi,
+            "atoi" => Instruction::Atoi, 
             "padd" => Instruction::Padd,
             "add" => Instruction::Add,
             "mul" => Instruction::Mul,
             "div" => Instruction::Div,
             "mod" => Instruction::Mod,
-            "storeg" => {
-                Instruction::Storeg(val.expect(val_err)
-                    .parse()
-                    .expect("value is not a positive integer"))
-            }
+            "storeg" => Instruction::Storeg(val_u(val_s(val))?),
             "storen" => Instruction::Storen,
             "equal" => Instruction::Equal,
             "inf" => Instruction::Inf,
             "infeq" => Instruction::Infeq,
             "sup" => Instruction::Sup,
             "supeq" => Instruction::Supeq,
-            "jump" => Instruction::Jump(val.expect(val_err)),
-            "jz" => Instruction::Jz(val.expect(val_err)),
-            "err" => Instruction::Err(Self::remove_quotes(&val.expect(val_err))),
+            "jump" => Instruction::Jump(val_s(val)?),
+            "jz" => Instruction::Jz(val_s(val)?),
+            "err" => Instruction::Err(Self::remove_quotes(&val_s(val)?)),
             _ => panic!(format!("Instruction not found: {}", inst)),
-        })
+        };
+        Ok(res)
     }
 }
 
@@ -330,7 +325,7 @@ struct Machine {
     /// Call Stack (instruction address, frame pointer)
     call_stack: Vec<(usize, usize)>,
     /// Code
-    code: Vec<String>,
+    code: Vec<Instruction>,
     /// String stack
     strings: Vec<String>,
     /// Label Map
@@ -371,6 +366,7 @@ impl Machine {
         self.code = code_labels.iter()
             .filter(|line| Self::is_label(&line).is_none())
             .cloned()
+            .map(|x| x.parse().expect("Invalid code"))
             .collect();
 
         Ok(())
@@ -416,7 +412,7 @@ impl Machine {
                                 for (k, _) in self.labels.iter().filter(|&(_, &v)| v == i) {
                                     println!("{}:", k);
                                 }
-                                println!("  {:>2}|\t{}", i, line);
+                                println!("  {:>2}|\t{:?}", i, line);
                             }
                         }
                         Command::PrintLabels => {
@@ -455,19 +451,19 @@ impl Machine {
                         Command::Next(end) => {
                             let mut bk = self.clone();
                             for _ in 0..end {
-                                let instr = bk.get_instruction().parse()?;
+                                let instr = bk.get_instruction();
                                 println!("\t: {:?} :", instr);
                                 if let Status::Exit = bk.run_instruction(&instr)? {
                                     break;
                                 }
                                 instr.write_ln();
                             }
-                        }
+                        } 
                         Command::Step(end) => {
                             for _ in 0..end {
-                                let instr = self.get_instruction().parse()?;
+                                let instr = &self.get_instruction();
                                 println!("\t< {:?} >", instr);
-                                if let Status::Exit = self.run_instruction(&instr)? {
+                                if let Status::Exit = self.run_instruction(instr)? {
                                     break;
                                 }
                                 instr.write_ln();
@@ -495,7 +491,7 @@ impl Machine {
 
     fn run(&mut self) -> Result<()> {
         loop {
-            let instr = self.get_instruction().parse()?;
+            let instr = self.get_instruction();
             if let Status::Exit = self.run_instruction(&instr)? {
                 break;
             }
@@ -552,8 +548,8 @@ impl Machine {
         }
     }
 
-    fn get_instruction(&mut self) -> &str {
-        &self.code[self.pc]
+    fn get_instruction(&self) -> Instruction {
+        self.code[self.pc].clone()
     }
 
     fn pushi(&mut self, val: i32) {
