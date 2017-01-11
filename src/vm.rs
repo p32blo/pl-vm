@@ -262,7 +262,6 @@ impl Machine {
                                     let instr = bk.get_instruction();
                                     println!("\t: {} :", instr);
                                     if let Status::Exit = bk.run_instruction(&instr)? {
-                                        status = Status::Exit;
                                         break;
                                     }
                                     instr.write_ln();
