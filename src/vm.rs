@@ -260,10 +260,10 @@ impl Machine {
                     for _ in 0..end {
                         let instr = bk.get_instruction();
                         println!("\t: {} :", instr);
+                        instr.write_ln();
                         if let Status::Exit = bk.run_instruction(&instr)? {
                             break;
                         }
-                        instr.write_ln();
                     }
                 }
                 Ok(status)
