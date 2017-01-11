@@ -9,6 +9,7 @@ use std::io::Read;
 
 use std::collections::HashMap;
 
+use errors;
 use errors::*;
 
 use instructions::Instruction;
@@ -295,7 +296,9 @@ impl Machine {
         }
     }
 
-    fn run_debug(&mut self) -> Result<()> {
+
+
+    fn run_debug(&mut self) -> () {
         let mut status = Status::Success;
         loop {
             match status {
@@ -305,24 +308,14 @@ impl Machine {
             io::stdout().flush().expect("Could not flush stdout");
 
             let cmd = self.readline().unwrap_or_else(|ref e| {
-                print!("\t{}. ", e);
-                for e in e.iter().skip(1) {
-                    print!("{}. ", e);
-                }
-                println!();
+                errors::catch_err(e);
                 Command::Empty
             });
 
-            match self.debug(cmd, status) {
-                Ok(val) => status = val,
-                Err(ref e) => {
-                    print!("\t{}. ", e);
-                    for e in e.iter().skip(1) {
-                        print!("{}. ", e);
-                    }
-                    println!();
-                }
-            }
+            status = self.debug(cmd, status).unwrap_or_else(|ref e| {
+                errors::catch_err(e);
+                Status::Exit
+            });
         }
     }
 
@@ -477,7 +470,7 @@ impl Machine {
     fn atoi(&mut self) -> Result<()> {
         let str = match self.stack_pop() {
             Operand::Address(addr) => self.strings.remove(addr),
-            _ => panic!("atoi: Must be address to write string"),
+            _ => bail!("atoi: Must be address to write string"),
         };
 
         match str.parse() {
@@ -590,7 +583,7 @@ pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     // println!("{:#?}", m);
     match mode {
         Mode::Running => m.run()?,
-        Mode::Debug => m.run_debug()?,
+        Mode::Debug => m.run_debug(),
     }
 
     Ok(())

@@ -13,6 +13,14 @@ use vm::Mode;
 
 pub mod errors {
     error_chain!{}
+
+    pub fn catch_err(e: &Error) {
+        print!("\t{}. ", e);
+        for e in e.iter().skip(1) {
+            print!("{}. ", e);
+        }
+        println!();
+    }
 }
 
 fn main() {
