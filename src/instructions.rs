@@ -60,7 +60,7 @@ impl FromStr for Instruction {
             "pushn" => Instruction::Pushn(val_i(val_s(val))?),
             "pushg" => Instruction::Pushg(val_u(val_s(val))?),
             "pushs" => Instruction::Pushs(val_s(val).and_then(|x| Self::remove_quotes(&x))?),
-            "pusha" => Instruction::Pusha(val_s(val).and_then(|x| Self::remove_quotes(&x))?),
+            "pusha" => Instruction::Pusha(val_s(val)?),
             "pushgp" => Instruction::Pushgp,
             "call" => Instruction::Call,
             "return" => Instruction::Return,
