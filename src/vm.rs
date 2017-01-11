@@ -24,14 +24,14 @@ pub enum Mode {
     Running,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum Operand {
     Integer(i32),
     // Float(f32),
     Address(usize),
 }
 
-impl fmt::Debug for Operand {
+impl fmt::Display for Operand {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Operand::Integer(i) => write!(f, "{:2}i", i),
@@ -47,27 +47,27 @@ impl Operand {
                 Operand::Address((a as i32 + n) as usize)
             }
             (&Operand::Integer(n), &Operand::Integer(a)) => Operand::Integer(n + a),
-            _ => panic!(format!("Operand::add => Invalid Operation: {:?} + {:?}", n, a)),
+            _ => panic!(format!("Operand::add => Invalid Operation: {} + {}", n, a)),
         }
     }
 
     fn mul(n: &Self, m: &Self) -> Self {
         match (n, m) {
             (&Operand::Integer(n), &Operand::Integer(m)) => Operand::Integer(n * m),
-            _ => panic!(format!("Operand::mul => Invalid Operation: {:?} * {:?}", n, m)),
+            _ => panic!(format!("Operand::mul => Invalid Operation: {} * {}", n, m)),
         }
     }
 
     fn div(n: &Self, m: &Self) -> Self {
         match (n, m) {
             (&Operand::Integer(n), &Operand::Integer(m)) => Operand::Integer(m / n),
-            _ => panic!(format!("Operand::div => Invalid Operation: {:?} / {:?}", m, n)),
+            _ => panic!(format!("Operand::div => Invalid Operation: {} / {}", m, n)),
         }
     }
     fn module(n: &Self, m: &Self) -> Self {
         match (n, m) {
             (&Operand::Integer(n), &Operand::Integer(m)) => Operand::Integer(m % n),
-            _ => panic!(format!("Operand::mod => Invalid Operation: {:?} % {:?}", m, n)),
+            _ => panic!(format!("Operand::mod => Invalid Operation: {} % {}", m, n)),
         }
     }
 
@@ -75,7 +75,7 @@ impl Operand {
         match (n, m) {
             (&Operand::Integer(n), &Operand::Integer(m)) if n == m => Operand::Integer(1),
             (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::equal => Invalid Operation: {:?} == {:?}", m, n)),
+            _ => panic!(format!("Operand::equal => Invalid Operation: {} == {}", m, n)),
         }
     }
 
@@ -83,7 +83,7 @@ impl Operand {
         match (n, m) {
             (&Operand::Integer(n), &Operand::Integer(m)) if m < n => Operand::Integer(1),
             (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::sup => Invalid Operation: {:?} < {:?}", m, n)),
+            _ => panic!(format!("Operand::sup => Invalid Operation: {} < {}", m, n)),
         }
     }
 
@@ -91,7 +91,7 @@ impl Operand {
         match (n, m) {
             (&Operand::Integer(n), &Operand::Integer(m)) if m <= n => Operand::Integer(1),
             (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::sup => Invalid Operation: {:?} <= {:?}", m, n)),
+            _ => panic!(format!("Operand::sup => Invalid Operation: {} <= {}", m, n)),
         }
     }
 
@@ -99,7 +99,7 @@ impl Operand {
         match (n, m) {
             (&Operand::Integer(n), &Operand::Integer(m)) if m > n => Operand::Integer(1),
             (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::sup => Invalid Operation: {:?} > {:?}", m, n)),
+            _ => panic!(format!("Operand::sup => Invalid Operation: {} > {}", m, n)),
         }
     }
 
@@ -107,7 +107,7 @@ impl Operand {
         match (n, m) {
             (&Operand::Integer(n), &Operand::Integer(m)) if m >= n => Operand::Integer(1),
             (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::supeq => Invalid Operation: {:?} >= {:?}", m, n)),
+            _ => panic!(format!("Operand::supeq => Invalid Operation: {} >= {}", m, n)),
         }
     }
 }
@@ -212,7 +212,7 @@ impl Machine {
                                 for (k, _) in self.labels.iter().filter(|&(_, &v)| v == i) {
                                     println!("{}:", k);
                                 }
-                                println!("  {:>2}|\t{:?}", i, line);
+                                println!("  {:>2}|\t{}", i, line);
                             }
                         }
                         Command::PrintLabels => {
@@ -238,7 +238,7 @@ impl Machine {
                             println!();
 
                             for (i, val) in self.stack.iter().enumerate().rev() {
-                                print!("{:?}", val);
+                                print!("{}", val);
                                 if self.fp == i {
                                     print!(" <- fp");
                                 }
@@ -252,7 +252,7 @@ impl Machine {
                             let mut bk = self.clone();
                             for _ in 0..end {
                                 let instr = bk.get_instruction();
-                                println!("\t: {:?} :", instr);
+                                println!("\t: {} :", instr);
                                 if let Status::Exit = bk.run_instruction(&instr)? {
                                     break;
                                 }
@@ -262,7 +262,7 @@ impl Machine {
                         Command::Step(end) => {
                             for _ in 0..end {
                                 let instr = &self.get_instruction();
-                                println!("\t< {:?} >", instr);
+                                println!("\t< {} >", instr);
                                 if let Status::Exit = self.run_instruction(instr)? {
                                     break;
                                 }
@@ -411,7 +411,7 @@ impl Machine {
     fn writei(&mut self) {
         let val = self.stack_pop();
         if let Operand::Integer(i) = val {
-            print!("{:?}", i);
+            print!("{}", i);
             io::stdout().flush().expect("Could not flush stdout");
         } else {
             panic!("writei: Not an Integer");
