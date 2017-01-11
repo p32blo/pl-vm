@@ -47,14 +47,14 @@ impl FromStr for Instruction {
     fn from_str(instr: &str) -> Result<Instruction> {
         let (inst, val) = Self::decode(instr);
 
-        let val_s = |val: Option<String>| -> Result<String> {
+        let val_s = |val: Option<String>| {
             val.ok_or(format!("No value found for '{}' instruction", inst).into())
         };
-        let val_i = |val_s: Result<String>| -> Result<i32> {
+        let val_i = |val_s: Result<String>| {
             val_s.and_then(|x| x.parse().chain_err(|| "value is not a integer"))
         };
-        let val_u = |val_s: Result<String>| -> Result<usize> {
-            val_s.and_then(|x| x.parse::<usize>().chain_err(|| "value is not a positive integer"))
+        let val_u = |val_s: Result<String>| {
+            val_s.and_then(|x| x.parse().chain_err(|| "value is not a positive integer"))
         };
 
         let res = match inst.as_ref() {
