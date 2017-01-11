@@ -308,12 +308,11 @@ impl Machine {
             io::stdout().flush().expect("Could not flush stdout");
 
             let cmd = self.readline().unwrap_or_else(|ref e| {
-                errors::catch_err(e);
+                errors::print_errs(e);
                 Command::Empty
             });
-
             status = self.debug(cmd, status).unwrap_or_else(|ref e| {
-                errors::catch_err(e);
+                errors::print_errors(e);
                 Status::Exit
             });
         }

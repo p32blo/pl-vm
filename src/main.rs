@@ -14,12 +14,19 @@ use vm::Mode;
 pub mod errors {
     error_chain!{}
 
-    pub fn catch_err(e: &Error) {
+    pub fn print_errs(e: &Error) {
         print!("\t{}. ", e);
         for e in e.iter().skip(1) {
             print!("{}. ", e);
         }
         println!();
+    }
+
+    pub fn print_errors(e: &Error) {
+        println!("error: {}", e);
+        for e in e.iter().skip(1) {
+            println!("caused by: {}", e);
+        }
     }
 }
 
@@ -42,10 +49,7 @@ fn main() {
     if let Some(file) = matches.value_of("input") {
         // There are errors running the vm
         if let Err(ref e) = vm::start(&file, mode) {
-            println!("error: {}", e);
-            for e in e.iter().skip(1) {
-                println!("caused by: {}", e);
-            }
+            errors::print_errors(e);
         }
     }
 }
