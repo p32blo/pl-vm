@@ -5,8 +5,10 @@ extern crate error_chain;
 extern crate clap;
 use clap::{App, Arg};
 
-mod instruction;
 mod vm;
+mod instructions;
+mod commands;
+
 use vm::Mode;
 
 pub mod errors {
