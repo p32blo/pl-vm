@@ -5,8 +5,13 @@ extern crate error_chain;
 extern crate clap;
 use clap::{App, Arg};
 
+mod instruction;
 mod vm;
 use vm::Mode;
+
+pub mod errors {
+    error_chain!{}
+}
 
 fn main() {
     let matches = App::new("vm")
