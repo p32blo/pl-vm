@@ -14,11 +14,13 @@ use errors::*;
 use instructions::Instruction;
 use commands::Command;
 
+#[derive(Debug, Clone, Copy)]
 enum Status {
     Success,
     Exit,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum Mode {
     Debug,
     Running,
@@ -301,16 +303,26 @@ impl Machine {
                 Status::Exit => print!("(debug - finished) "),
             }
             io::stdout().flush().expect("Could not flush stdout");
-            status = self.readline()
-                .and_then(|cmd| self.debug(cmd, status))
-                .unwrap_or_else(|ref e| {
+
+            let cmd = self.readline().unwrap_or_else(|ref e| {
+                print!("\t{}. ", e);
+                for e in e.iter().skip(1) {
+                    print!("{}. ", e);
+                }
+                println!();
+                Command::Empty
+            });
+
+            match self.debug(cmd, status) {
+                Ok(val) => status = val,
+                Err(ref e) => {
                     print!("\t{}. ", e);
                     for e in e.iter().skip(1) {
                         print!("{}. ", e);
                     }
                     println!();
-                    Status::Exit
-                });
+                }
+            }
         }
     }
 
