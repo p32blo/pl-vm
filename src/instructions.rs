@@ -47,9 +47,7 @@ impl FromStr for Instruction {
     fn from_str(instr: &str) -> Result<Instruction> {
         let (inst, val) = Self::decode(instr);
 
-        let val_s = |val: Option<String>| {
-            val.ok_or(format!("No value found for '{}' instruction", inst).into())
-        };
+        let val_s = |val: Option<String>| val.ok_or("No value found".into());
         let val_i = |val_s: Result<String>| {
             val_s.and_then(|x| x.parse().chain_err(|| "value is not a integer"))
         };
@@ -61,8 +59,8 @@ impl FromStr for Instruction {
             "pushi" => Instruction::Pushi(val_i(val_s(val))?),
             "pushn" => Instruction::Pushn(val_i(val_s(val))?),
             "pushg" => Instruction::Pushg(val_u(val_s(val))?),
-            "pushs" => Instruction::Pushs(Self::remove_quotes(&val_s(val)?)),
-            "pusha" => Instruction::Pusha(val_s(val)?),
+            "pushs" => Instruction::Pushs(val_s(val).and_then(|x| Self::remove_quotes(&x))?),
+            "pusha" => Instruction::Pusha(val_s(val).and_then(|x| Self::remove_quotes(&x))?),
             "pushgp" => Instruction::Pushgp,
             "call" => Instruction::Call,
             "return" => Instruction::Return,
@@ -88,7 +86,7 @@ impl FromStr for Instruction {
             "supeq" => Instruction::Supeq,
             "jump" => Instruction::Jump(val_s(val)?),
             "jz" => Instruction::Jz(val_s(val)?),
-            "err" => Instruction::Err(Self::remove_quotes(&val_s(val)?)),
+            "err" => Instruction::Err(val_s(val).and_then(|x| Self::remove_quotes(&x))?),
             _ => panic!(format!("Instruction not found: {}", inst)),
         };
         Ok(res)
@@ -147,14 +145,13 @@ impl Instruction {
         }
     }
 
-    fn remove_quotes(string: &str) -> String {
-        let mut val = string.to_string();
-
-        // Assumes well formed strings with both quotes
-        val.remove(0);
-        val.pop().unwrap();
-
-        unescape::unescape(&val).unwrap()
+    fn remove_quotes(string: &str) -> Result<String> {
+        let s = string.split('"').collect::<Vec<_>>();
+        if s.len() == 3 && s.starts_with(&[""]) && s.ends_with(&[""]) {
+            unescape::unescape(s[1]).ok_or("Wrong string escape sequence".into())
+        } else {
+            bail!("Value is not a String")
+        }
     }
 
     pub fn write_ln(&self) {

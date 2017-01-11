@@ -166,7 +166,8 @@ impl Machine {
         self.code.clear();
         // remove labels from code
         for instr in code_labels.iter().filter(|line| Self::is_label(&line).is_none()) {
-            self.code.push(instr.parse()?);
+            self.code.push(instr.parse()
+                .chain_err(|| format!("Failed to parse '{}' instruction", instr))?);
         }
         Ok(())
     }
