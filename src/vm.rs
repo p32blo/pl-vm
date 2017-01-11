@@ -154,6 +154,7 @@ impl Machine {
         // inserted labels so far
         let mut acc = 0;
 
+        self.labels.clear();
         // insert labels with the correct pointer
         for (i, line) in code_labels.iter().enumerate() {
             if let Some(val) = Self::is_label(&line) {
@@ -162,13 +163,11 @@ impl Machine {
             }
         }
 
+        self.code.clear();
         // remove labels from code
-        self.code = code_labels.iter()
-            .filter(|line| Self::is_label(&line).is_none())
-            .cloned()
-            .map(|x| x.parse().expect("Invalid code"))
-            .collect();
-
+        for instr in code_labels.iter().filter(|line| Self::is_label(&line).is_none()) {
+            self.code.push(instr.parse()?);
+        }
         Ok(())
     }
 
