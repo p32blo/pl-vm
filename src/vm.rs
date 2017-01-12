@@ -160,7 +160,7 @@ impl Machine {
         self.labels.clear();
         // insert labels with the correct pointer
         for (i, line) in code_labels.iter().enumerate() {
-            if let Some(val) = Self::is_label(&line) {
+            if let Some(val) = Self::is_label(line) {
                 self.labels.insert(val, i - acc);
                 acc += 1;
             }
@@ -168,7 +168,7 @@ impl Machine {
 
         self.code.clear();
         // remove labels from code
-        for instr in code_labels.iter().filter(|line| Self::is_label(&line).is_none()) {
+        for instr in code_labels.iter().filter(|line| Self::is_label(line).is_none()) {
             self.code.push(instr.parse()
                 .chain_err(|| format!("Failed to parse '{}' instruction", instr))?);
         }
