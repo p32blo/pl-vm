@@ -1,4 +1,19 @@
 
+//! A simple `vm` with debug support
+//!
+//! Executing the `vm`:
+//!
+//! ```
+//! pl-vm <file>
+//! ```
+//! Executing the `vm` in debug mode:
+//!
+//! ```
+//! pl-vm --debug <file>
+//! ```
+//!
+
+
 #[macro_use]
 extern crate error_chain;
 
@@ -12,8 +27,10 @@ mod commands;
 use vm::Mode;
 
 pub mod errors {
+    //! Error handling
     error_chain!{}
 
+    /// Print the error chain in oneline
     pub fn print_errs(e: &Error) {
         print!("\t{}. ", e);
         for e in e.iter().skip(1) {
@@ -22,6 +39,7 @@ pub mod errors {
         println!();
     }
 
+    /// Print a multiline error chain
     pub fn print_errors(e: &Error) {
         println!("error: {}", e);
         for e in e.iter().skip(1) {

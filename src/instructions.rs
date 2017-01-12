@@ -1,4 +1,6 @@
 
+//! Instruction parsing and printing
+
 extern crate unescape;
 
 use std::fmt;
@@ -6,6 +8,7 @@ use std::str::FromStr;
 
 use errors::*;
 
+/// Possible `vm` instructions
 #[derive(Clone, Debug)]
 pub enum Instruction {
     Pushi(i32),

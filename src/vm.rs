@@ -1,4 +1,6 @@
 
+//! Virtual Machine definition
+
 use std::io;
 use std::io::Write;
 use std::fmt;
@@ -13,20 +15,16 @@ use errors;
 use errors::*;
 
 use instructions::Instruction;
-use commands::Command;
+use commands::{Command, Status};
 
-#[derive(Debug, Clone, Copy)]
-enum Status {
-    Success,
-    Exit,
-}
-
+/// The `vm` execution mode
 #[derive(Debug, Clone, Copy)]
 pub enum Mode {
     Debug,
     Running,
 }
 
+/// A value that can be in the stack
 #[derive(Debug, Clone, Copy)]
 enum Operand {
     Integer(i32),
@@ -115,6 +113,7 @@ impl Operand {
     }
 }
 
+/// The Main struct responsible for the `vm`
 #[derive(Default, Clone)]
 struct Machine {
     /// Frame Pointer
@@ -576,6 +575,7 @@ impl Machine {
     }
 }
 
+/// `vm` entry point
 pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     let mut m = Machine::new();
     m.load(&path).chain_err(|| format!("Cannot load file '{}'", path.as_ref().display()))?;

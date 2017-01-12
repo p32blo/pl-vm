@@ -1,8 +1,21 @@
 
+//! debug CLI command parsing
+
 use errors::*;
 
 use std::str::FromStr;
 
+/// The status of the debug `vm` CLI
+#[derive(Debug, Clone, Copy)]
+pub enum Status {
+    /// Debug execution is active
+    Success,
+    /// Debug execution has ended
+    Exit,
+}
+
+/// Possible commands for the debug CLI
+#[derive(Debug, Clone)]
 pub enum Command {
     Run,
     Step(usize),
@@ -17,6 +30,7 @@ pub enum Command {
 }
 
 impl Command {
+    /// Print Usage description
     pub fn help() {
         let help = [("r, run", "Continue the execution"),
                     ("s, step [NUMBER]", "Step by NUMBER instructions. NUMBER defaults to 1"),
