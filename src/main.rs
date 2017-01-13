@@ -13,20 +13,18 @@
 //! ```
 //!
 
-
 #[macro_use]
 extern crate error_chain;
-
 extern crate clap;
-use clap::{App, Arg};
 
 mod vm;
 mod instructions;
 mod commands;
 
 use vm::Mode;
+use clap::{App, Arg};
 
-pub mod errors {
+mod errors {
     //! Error handling
     error_chain!{}
 
@@ -50,7 +48,7 @@ pub mod errors {
 
 fn main() {
     let matches = App::new("pl-vm")
-        .about("A simple vm with debugger")
+        .about("A simple vm with debug support")
         .version(env!("CARGO_PKG_VERSION"))
         .author(env!("CARGO_PKG_AUTHORS"))
         .arg(Arg::from_usage("<input> 'Load the file in the vm'"))
