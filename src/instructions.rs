@@ -50,7 +50,7 @@ impl FromStr for Instruction {
     fn from_str(instr: &str) -> Result<Instruction> {
         let (inst, val) = Self::decode(instr);
 
-        let val_s = |val: Option<String>| val.ok_or("No value found".into());
+        let val_s = |val: Option<String>| val.ok_or_else(|| "No value found".into());
         let val_i = |val_s: Result<String>| {
             val_s.and_then(|x| x.parse().chain_err(|| "value is not a integer"))
         };
@@ -151,7 +151,7 @@ impl Instruction {
     fn remove_quotes(string: &str) -> Result<String> {
         let s = string.split('"').collect::<Vec<_>>();
         if s.len() == 3 && s.starts_with(&[""]) && s.ends_with(&[""]) {
-            unescape::unescape(s[1]).ok_or("Wrong string escape sequence".into())
+            unescape::unescape(s[1]).ok_or_else(|| "Wrong string escape sequence".into())
         } else {
             bail!("Value is not a String")
         }
