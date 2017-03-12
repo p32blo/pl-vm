@@ -8,6 +8,7 @@ The full architecture specification can be seen at the following links:
 
 * [Portuguese](http://www.di.ubi.pt/~desousa/Compil/docpt.pdf)
 * [French](http://www.di.ubi.pt/~desousa/Compil/doc.html)
+* [English](#progress)
 
 # About
 
@@ -50,7 +51,9 @@ The following Execution Errors are the possible failure states of this `vm`:
 
 # Progress
 
-This project is an work in progress since not all instruction are implemented.
+This project is an work in progress and not all `vm` instructions are yet implemented.
+
+The following sections documents all the instructions for `vm` while reporting if the implementation of each instruction is complete (✅) or still missing (❌).
 
 ## Integer Operations
 
