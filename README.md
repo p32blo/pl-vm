@@ -5,8 +5,9 @@ An implementation of a stack-based Virtual Machine with debug support
 
 # About
 
-This is a Rust Language port of a VM created as a learning resources for Compiler Design class. In the assignment the goal is to use a compiler generator to translate a simple imperative language into instruction of this VM. This VM helps validating the translation by running the generated output.
+This is an implementation of a VM with the Rust Language created as a learning resources for Compiler Design class. In the assignment the goal is to use a compiler generator to translate a simple imperative language into instruction of this VM. This VM helps validating the translation by running the generated output.
 
+This implementation started as an exercise on the Rust Language but it can also serve the same purposes of the existing implementations. Furthermore, features such as the integrated debugger will provide a better and faster experience debugging both the generated code and its output.
 
 # Documentation
 
