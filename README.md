@@ -238,3 +238,55 @@ START         | ✅      | Assign the value of `sp` to `fp`
 NOP           | ✅      | Do nothing
 ERR x         | ✅      | Triggers an instruction error with message x(string)
 STOP          | ✅      | Stops program execution
+
+# Syntax
+
+## Lexical Conventions
+`spaces`, `tabs` and `carriege returns` form the whitespace tokens. Comments begin with `//` and continue until the end of the line. The identifiers for `<ident>` obey the following regular expression: 
+
+	<digit> ::= 0-9
+	<alpha> ::= a-z | A-Z
+	<ident> ::= (<alpha>|_)(<alpha>|<digit>|_|')*
+	
+The integer and real number constants are defined by the following regular expressions:
+	
+	<integer> ::= -?<digit>+
+	<float> ::= -?<digit>+(.<digit>*)?((e|E)(+|-)?<digit>+)?
+ 
+With the convention that a constant is a real number only if it is not also an integer constant (in other words, a real constant contains at least a decimal point or an exponent).
+
+Strings are delimited by the character `"` , and can contain the same character only if preceded by the character `\`. In other words, strings obey the following regular expression:
+	
+	<string> ::= "([^"]|\")*"
+	
+All identifiers that are instructions (see syntax below) are reserved and are case-insensitive.
+
+## Syntax
+
+Every programm follows the following syntax:
+
+	<code> ::= <instr>*
+	
+	<instr> ::= <ident> :
+	          | <instr_atom>
+	          | <instr_int> <integer>
+	          | pushf <float>
+	          | (pushs | err) <string>
+	          | check <integer> , <integer>
+	          | (jump | jz | pusha) <ident>
+			  
+	<instr_atom> ::= add | sub | mul | div | mod | not | inf | infeq | sup
+	               | supeq | fadd | fsub | fmul | fdiv | fcos | fsin
+	               | finf | finfeq | fsup | fsupeq | concat | equal | atoi | atof
+	               | itof | ftoi | stri | strf
+	               | pushsp | pushfp | pushgp | loadn | storen | swap
+	               | writei | writef | writes | read | call | return
+	               | drawpoint | drawline | drawcircle
+	               | cleardrawingarea | opendrawingarea | setcolor | refresh
+	               | start | nop | stop | allocn | free | dupn | popn
+	               | pushi | pushn | pushg | pushl | load
+	               | dup | pop | storel | storeg | alloc
+				   
+	<instr_int> ::= pushi | pushn | pushg | pushl | load
+	              | dup | pop | storel | storeg | alloc
+				   
