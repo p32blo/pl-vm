@@ -9,6 +9,7 @@ This is an implementation of a VM with the Rust Language created as a learning r
 
 This implementation started as an exercise on the Rust Language but it can also serve the same purposes of the existing implementations. Furthermore, features such as the integrated debugger will provide a better and faster experience debugging both the generated code and its output.
 
+
 # Documentation
 
 The full architecture specification can be seen at the following links:
@@ -42,6 +43,7 @@ In order to see all available debug commands and their description you can use t
 		h, help             Print this message
 		q, quit             Exit from the debugger
 
+
 ## Error Messages
 
 The following Execution Errors are the possible failure states of this `vm`:
@@ -54,7 +56,8 @@ The following Execution Errors are the possible failure states of this `vm`:
 * `Anomaly` - This error must never occur; If so, please report it to the teachers, attaching as much as possible the program that triggered it.
 
 
-# Progress 
+# Progress
+
 *`32 of 75 instructions completed`*
 
 This project is an work in progress and not all `vm` instructions are yet implemented.
@@ -116,6 +119,7 @@ Instructions | Status | Description
 -------------|--------|------------
 CONCAT       | ❌      | Pop `n` then `m` which must be string addresses, stack the address of a string equal to the concatenation of the address string `n` and that of address `m`
 
+
 ## Heap Operations
 
 Instructions | Status | Description
@@ -152,6 +156,7 @@ STRF         | ❌      | Pop a real number and stack the address of a string re
 
 If `x` denotes an address in the stack, then `x[n]` denotes an address with an offset of `n` above `x`.
 
+
 ### Push
 Instructions | Status | Description
 -------------|--------|------------
@@ -169,12 +174,14 @@ LOADN        | ✅      | Pop an integer `n`, an address `a` and stacks the valu
 DUP n        | ❌      | Duplicates and stacks the `n`(integer) values at the top of the stack
 DUPN         | ❌      | Pop an integer `n`, then duplicates and stacks the `n` values at the top of the stack
 
+
 ### Pop
 
 Instructions | Status | Description
 -------------|--------|------------
 POP n        | ❌      | Pop `n`(integer) values in the stack
 POPN         | ❌      | Pop an integer `n` then pop `n` values in the stack 
+
 
 ### Store
 
@@ -193,6 +200,7 @@ Instructions  | Status | Description
 CHECK n p     | ❌      | Verifies that the vertex of the stack is an integer `i` such that `n` ≤ `i` ≤ `p` , else fails on ann error
 SWAP          | ❌      | Pop `n` then `m` and replaces `n` then `m`
 
+
 ## Input/Output
 
 Instructions  | Status | Description
@@ -201,6 +209,7 @@ WRITEI        | ✅      | Pops an integer and prints it to the standard output
 WRITEF        | ❌      | Pops a real number and prints it to the standard output
 WRITES        | ✅      | Pops the address of a string and print the corresponding string to the standard output
 READ          | ✅      | Reads a string on the keyboard, terminated by a carriage return, stores the string (without the carriage return) and stacks the address.
+
 
 ## Graphical Primitives
 
@@ -214,6 +223,7 @@ CLEARDRAWINGAREA | ❌      | Clears the graphic output and resets the current c
 SETCOLOR         | ❌      | Pop `b`, `g` and `r` which must be integer and changes the current color according to the RGB value defined by the three integers between `0` and `65535`
 REFRESH          | ❌      | Refreshes the graphics window, i.e. makes visible the graphical operations performed since the last refresh
 
+
 ## Control Operations
 
 Instructions  | Status | Description
@@ -221,6 +231,7 @@ Instructions  | Status | Description
 JUMP label    | ✅      | Assigns the address in the program corresponding to label to the register `pc` which can be an integer or a symbolic value
 JZ label      | ✅      | Pop a value, if it is `zero` assign the program address corresponding to the label, if not incremente by `pc` by 1
 PUSHA lable   | ✅      | Stack the program address corresponding to the label
+
 
 ## Procedure
 
@@ -243,9 +254,11 @@ NOP           | ✅      | Do nothing
 ERR x         | ✅      | Triggers an instruction error with message x(string)
 STOP          | ✅      | Stops program execution
 
+
 # Syntax
 
 ## Lexical Conventions
+
 `spaces`, `tabs` and `carriege returns` form the whitespace tokens. Comments begin with `//` and continue until the end of the line. The identifiers for `<ident>` obey the following regular expression: 
 
 	<digit> ::= 0-9
@@ -264,6 +277,7 @@ Strings are delimited by the character `"` , and can contain the same character 
 	<string> ::= "([^"]|\")*"
 	
 All identifiers that are instructions (see syntax below) are reserved and are case-insensitive.
+
 
 ## Syntax
 
