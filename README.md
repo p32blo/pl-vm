@@ -52,11 +52,14 @@ The following Execution Errors are the possible failure states of this `vm`:
 * `Error "message"` - Triggered when the err statement is executed
 * `Anomaly` - This error must never occur; If so, please report it to the teachers, attaching as much as possible the program that triggered it.
 
-# Progress
+
+# Progress 
+*`32 of 75 instructions completed`*
 
 This project is an work in progress and not all `vm` instructions are yet implemented.
 
 The following sections documents all the instructions for `vm` while reporting if the implementation of each instruction is complete (✅) or still missing (❌).
+
 
 ## Integer Operations
 
