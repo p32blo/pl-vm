@@ -2,6 +2,12 @@
 
 An implementation of a stack-based Virtual Machine with debug support
 
+
+# About
+
+This is a Rust Language port of a VM created as a learning resources for Compiler Design class. In the assignment the goal is to use a compiler generator to translate a simple imperative language into instruction of this VM. This VM helps validating the translation by running the generated output.
+
+
 # Documentation
 
 The full architecture specification can be seen at the following links:
@@ -10,9 +16,6 @@ The full architecture specification can be seen at the following links:
 * [French](http://www.di.ubi.pt/~desousa/Compil/doc.html)
 * [English](#progress)
 
-# About
-
-This is a Rust Language port of a VM created as a learning resources for Compiler Design class. In the assignment the goal is to use a compiler generator to translate a simple imperative language into instruction of this VM. This VM helps validating the translation by running the generated output.
 
 # Usage
 
