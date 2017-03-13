@@ -48,9 +48,9 @@ In order to see all available debug commands and their description you can use t
 
 The following Execution Errors are the possible failure states of this `vm`:
 
-* `Illegal Operand` - Triggered when the value (s) on the stack are not of the expected nature
-* `Segmentation Fault` - Triggered for access to an illegal area of ​​the code, stack, or one of two heaps
-* `Stack Overflow` - Triggered for any attempt to add to the top of a solid stack (execution stack or call stack)
+* `Illegal Operand` - Triggered when the value(s) on the stack are not of the expected type
+* `Segmentation Fault` - Triggered for access to an illegal area of the code, stack, or one of two heaps
+* `Stack Overflow` - Triggered for any attempt to add to the top of a full stack (execution stack or call stack)
 * `Division By Zero` - Triggered in case of division (integer) by zero
 * `Error "message"` - Triggered when the err statement is executed
 * `Anomaly` - This error must never occur; If so, please report it to the teachers, attaching as much as possible the program that triggered it.
