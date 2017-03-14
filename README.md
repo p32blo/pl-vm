@@ -77,7 +77,7 @@ MOD          | ✅      | Pop `n` then `m` which must be an integer and stack th
 
 Instructions | Status | Description
 -------------|--------|------------
-NOT          | ❌      | Pop `n` which must be an integer and stacks the result `n = 0`
+NOT          | ❌      | Pop `n` which must be an integer and stack the result of `n = 0`
 INF          | ✅      | Pop `n` then `m` which must be an integer and stack the result of `m < n`
 INFEQ        | ✅      | Pop `n` then `m` which must be an integer and stack the result of `m ≤ n`
 SUP          | ✅      | Pop `n` then `m` which must be an integer and stack the result of `m > n`
@@ -117,21 +117,21 @@ PADD         | ✅      | Pop `n` which must be an integer then `a` which must b
 
 Instructions | Status | Description
 -------------|--------|------------
-CONCAT       | ❌      | Pop `n` then `m` which must be string addresses, stack the address of a string equal to the concatenation of the address string `n` and that of address `m`
+CONCAT       | ❌      | Pop `n` then `m` which must be string addresses, stack the address of a string equal to the concatenation of the string address  `n` and string address `m`
 
 
 ## Heap Operations
 
 Instructions | Status | Description
 -------------|--------|------------
-ALLOC n      | ❌      | Allocates a structured block of size `n`(integer) on the heap and stacks the corresponding address
-ALLOCN       | ❌      | Pop an integer `n` and allocate a structured block of size `n` on the heap and stacks the corresponding address
+ALLOC n      | ❌      | Allocate a structured block of size `n`(integer) on the heap and stack the corresponding address
+ALLOCN       | ❌      | Pop an integer `n` and allocate a structured block of size `n` on the heap and stack the corresponding address
 FREE         | ❌      | Pop an address `a` and release the structured block allocated at address `a`
 
 
 ## Equality
 
-The equality test tests whether the two objects on the stack (integers, real or addresses) are equal. An execution error occurs if the two objects are not of the same type. Two strings stored at the same address are equal, so this instruction can be used to test the equality of two strings.
+The equality test tests whether two objects on the stack (integers, real or addresses) are equal. An execution error occurs if the two objects are not of the same type. Two strings stored at the same address are equal, so this instruction can be used to test the equality of two strings.
 
 Instructions | Status | Description
 -------------|--------|------------
@@ -146,7 +146,7 @@ Instructions | Status | Description
 -------------|--------|------------
 ATOI         | ✅      | Pop the address of a string, and stack its conversion to an integer, fail if the string does not represent an integer.
 ATOF         | ❌      | Pop the address of a string and stack its conversion to real number, fail if the string does not represent a real number.
-ITOF         | ❌      | Pop an integer and stacks its conversion into a real number.
+ITOF         | ❌      | Pop an integer and stack its conversion into a real number.
 FTOI         | ❌      | Pop a real number and stack the integer representing its integer part (obtained by removing the decimals).
 STRI         | ❌      | Pop an integer and stack the address of a string representing that integer
 STRF         | ❌      | Pop a real number and stack the address of a string representing this real number
@@ -163,16 +163,16 @@ Instructions | Status | Description
 PUSHI n      | ✅      | Stack `n`(integer)
 PUSHN n      | ✅      | Stack `n`(integer) times the integer value `0`
 PUSHF n      | ❌      | Stack `n`(real number)
-PUSHS n      | ✅      | Stores `n`(string) in the string area and stacks the address
-PUSHG n      | ✅      | Stacks the value in `gp[n]`, where `n` must be an integer
-PUSHL n      | ❌      | Stacks the value in `fp[n]`, where `n` must be an integer
-PUSHSP       | ❌      | Stacks the value of the `sp`
-PUSHFP       | ❌      | Stacks the value of the `fp` register
-PUSHGP       | ✅      | Stacks the value of the `gp` register
+PUSHS n      | ✅      | Store `n`(string) in the string area and stack the address
+PUSHG n      | ✅      | Stack the value in `gp[n]`, where `n` must be an integer
+PUSHL n      | ❌      | Stack the value in `fp[n]`, where `n` must be an integer
+PUSHSP       | ❌      | Stack the value of the `sp`
+PUSHFP       | ❌      | Stack the value of the `fp` register
+PUSHGP       | ✅      | Stack the value of the `gp` register
 LOAD n       | ❌      | Pop an address `a` and stack the value in the stack or heap in `a[n]`, where `n` must be an integer
-LOADN        | ✅      | Pop an integer `n`, an address `a` and stacks the value in the stack or the heap in `a[n]`
-DUP n        | ❌      | Duplicates and stacks the `n`(integer) values at the top of the stack
-DUPN         | ❌      | Pop an integer `n`, then duplicates and stacks the `n` values at the top of the stack
+LOADN        | ✅      | Pop an integer `n`, an address `a` and stack the value in the stack or the heap in `a[n]`
+DUP n        | ❌      | Duplicate and stack the `n`(integer) values at the top of the stack
+DUPN         | ❌      | Pop an integer `n`, then duplicate and stack the `n` values at the top of the stack
 
 
 ### Pop
@@ -187,28 +187,28 @@ POPN         | ❌      | Pop an integer `n` then pop `n` values in the stack
 
 Instructions | Status | Description
 -------------|--------|------------
-Storel n     | ❌      | Takes a value `n`(integer) and stores it in the stack at `fp[n]`
-STOREG n     | ✅      | Takes a value `n`(integer) and stores it in the stack in `gp[n]`
-STORE n      | ❌      | Pop a value `v` and an address `a` , stores `v` at the address `a[n]` in the stack or heap, where `n` must be an integer
-STOREN       | ✅      | Pop a value `v`, an integer `n` and an address `a` , stores `v` at the address `a[n]` in the stack or heap, where `n` must be an integer
+Storel n     | ❌      | Take a value `n`(integer) and store it in the stack at `fp[n]`
+STOREG n     | ✅      | Take a value `n`(integer) and store it in the stack in `gp[n]`
+STORE n      | ❌      | Pop a value `v` and an address `a` , store `v` at the address `a[n]` in the stack or heap, where `n` must be an integer
+STOREN       | ✅      | Pop a value `v`, an integer `n` and an address `a` , store `v` at the address `a[n]` in the stack or heap, where `n` must be an integer
 
 
 ### Miscellaneous
 
 Instructions  | Status | Description
 --------------|--------|------------
-CHECK n p     | ❌      | Verifies that the vertex of the stack is an integer `i` such that `n` ≤ `i` ≤ `p` , else fails on an error
-SWAP          | ❌      | Pop `n` then `m` and replaces `n` then `m`
+CHECK n p     | ❌      | Verify that the vertex of the stack is an integer `i` such that `n` ≤ `i` ≤ `p` , else fails on an error
+SWAP          | ❌      | Pop `n` then `m` and stack `n` then `m`
 
 
 ## Input/Output
 
 Instructions  | Status | Description
 --------------|--------|------------
-WRITEI        | ✅      | Pops an integer and prints it to the standard output
-WRITEF        | ❌      | Pops a real number and prints it to the standard output
-WRITES        | ✅      | Pops the address of a string and print the corresponding string to the standard output
-READ          | ✅      | Reads a string on the keyboard, terminated by a carriage return, stores the string (without the carriage return) and stacks the address.
+WRITEI        | ✅      | Pop an integer and print it to the standard output
+WRITEF        | ❌      | Pop a real number and print it to the standard output
+WRITES        | ✅      | Pop the address of a string and print the corresponding string to the standard output
+READ          | ✅      | Read a string on the keyboard, terminated by a carriage return, store the string (without the carriage return) and stack the address.
 
 
 ## Graphical Primitives
@@ -217,19 +217,19 @@ Instructions     | Status | Description
 -----------------|--------|------------
 DRAWPOINT        | ❌      | Pop `m` then `n` which must be an integers and draw a coordinate point (`n`,`m`)
 DRAWLINE         | ❌      | Pop `q`, `p`, `m` and `n` which must be an integers and draw a segment between (`n`,`m`) and (`p`,`q`)
-DRAWCIRCLE       | ❌      | Pop `p`, `m` and `n` which must be integers and draws a circle with center (`n`,`m`) and radius `p`
+DRAWCIRCLE       | ❌      | Pop `p`, `m` and `n` which must be integers and draw a circle with center (`n`,`m`) and radius `p`
 OPENDRAWINGAREA  | ❌      | Pop `h` then `w` which must be integer and open a new graph window with width `w` and height `h`
-CLEARDRAWINGAREA | ❌      | Clears the graphic output and resets the current color to `black`
-SETCOLOR         | ❌      | Pop `b`, `g` and `r` which must be integer and changes the current color according to the RGB value defined by the three integers between `0` and `65535`
-REFRESH          | ❌      | Refreshes the graphics window, i.e. makes visible the graphical operations performed since the last refresh
+CLEARDRAWINGAREA | ❌      | Clear the graphic output and reset the current color to `black`
+SETCOLOR         | ❌      | Pop `b`, `g` and `r` which must be integer and change the current color according to the RGB value defined by the three integers between `0` and `65535`
+REFRESH          | ❌      | Refreshe the graphics window, i.e. make visible the graphical operations performed since the last refresh
 
 
 ## Control Operations
 
 Instructions  | Status | Description
 --------------|--------|------------
-JUMP label    | ✅      | Assigns the address in the program corresponding to label to the register `pc` which can be an integer or a symbolic value
-JZ label      | ✅      | Pop a value, if it is `zero` assign the program address corresponding to the label, if not increment by `pc` by 1
+JUMP label    | ✅      | Assign the address in the program corresponding to label to the register `pc` which can be an integer or a symbolic value
+JZ label      | ✅      | Pop a value, if it is `zero` assign the program address corresponding to the label, if not increment `pc` by 1
 PUSHA lable   | ✅      | Stack the program address corresponding to the label
 
 
@@ -239,8 +239,8 @@ When calling a procedure it is necessary to save the instruction register and lo
 
 Instructions  | Status | Description
 --------------|--------|------------
-CALL          | ✅      | Pop a code address `a`, saves `pc` and `fp` in the call stack, sets `fp` to the current value of `sp` and sets `pc` to `a`
-RETURN        | ✅      | Assigns to `sp` the current value of `fp`, pops the `fp` and `pc` from the call stack and increments `pc` by 1 to return to the instruction following the procedure call
+CALL          | ✅      | Pop a code address `a`, save `pc` and `fp` in the call stack, set `fp` to the current value of `sp` and set `pc` to `a`
+RETURN        | ✅      | Assign to `sp` the current value of `fp`, pop the `fp` and `pc` from the call stack and increment `pc` by 1 to return to the instruction following the procedure call
 
 
 ## Initialization and Termination
@@ -251,8 +251,8 @@ Instructions  | Status | Description
 --------------|--------|------------
 START         | ✅      | Assign the value of `sp` to `fp`
 NOP           | ✅      | Do nothing
-ERR x         | ✅      | Triggers an instruction error with message x(string)
-STOP          | ✅      | Stops program execution
+ERR x         | ✅      | Trigger an instruction error with message `x`(string)
+STOP          | ✅      | Stop program execution
 
 
 # Syntax
