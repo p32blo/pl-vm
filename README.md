@@ -38,7 +38,7 @@ In order to see all available debug commands and their description you can use t
 		n, next [NUMBER]    Show NUMBER instructions. NUMBER defaults to 1
 		reg, registers      Print the current value for the registers
 		st, stack           Print the current state of the stack
-		c, code             Print the code that is beeing run
+		c, code             Print the code that is being run
 		l, labels           Print all labels found in the code
 		h, help             Print this message
 		q, quit             Exit from the debugger
@@ -197,7 +197,7 @@ STOREN       | ✅      | Pop a value `v`, an integer `n` and an address `a` , s
 
 Instructions  | Status | Description
 --------------|--------|------------
-CHECK n p     | ❌      | Verifies that the vertex of the stack is an integer `i` such that `n` ≤ `i` ≤ `p` , else fails on ann error
+CHECK n p     | ❌      | Verifies that the vertex of the stack is an integer `i` such that `n` ≤ `i` ≤ `p` , else fails on an error
 SWAP          | ❌      | Pop `n` then `m` and replaces `n` then `m`
 
 
@@ -229,13 +229,13 @@ REFRESH          | ❌      | Refreshes the graphics window, i.e. makes visible 
 Instructions  | Status | Description
 --------------|--------|------------
 JUMP label    | ✅      | Assigns the address in the program corresponding to label to the register `pc` which can be an integer or a symbolic value
-JZ label      | ✅      | Pop a value, if it is `zero` assign the program address corresponding to the label, if not incremente by `pc` by 1
+JZ label      | ✅      | Pop a value, if it is `zero` assign the program address corresponding to the label, if not increment by `pc` by 1
 PUSHA lable   | ✅      | Stack the program address corresponding to the label
 
 
 ## Procedure
 
-When calling a procedure it is necessary to save the instruction register and local variables that will be restored uppon returning.
+When calling a procedure it is necessary to save the instruction register and local variables that will be restored upon returning.
 
 Instructions  | Status | Description
 --------------|--------|------------
@@ -259,7 +259,7 @@ STOP          | ✅      | Stops program execution
 
 ## Lexical Conventions
 
-`spaces`, `tabs` and `carriege returns` form the whitespace tokens. Comments begin with `//` and continue until the end of the line. The identifiers for `<ident>` obey the following regular expression: 
+`spaces`, `tabs` and `carriage returns` are considered whitespace. Comments begin with `//` and continue until the end of the line. The identifiers for `<ident>` obey the following regular expression: 
 
 	<digit> ::= 0-9
 	<alpha> ::= a-z | A-Z
@@ -281,7 +281,7 @@ All identifiers that are instructions (see syntax below) are reserved and are ca
 
 ## Syntax
 
-Every programm follows the following syntax:
+Every program follows the following syntax:
 
 	<code> ::= <instr>*
 	
