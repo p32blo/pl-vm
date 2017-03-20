@@ -190,8 +190,8 @@ impl Machine {
         self.stack.len()
     }
 
-    fn stack_pop(&mut self) -> Operand {
-        self.stack.pop().expect("Stack is empty")
+    fn stack_pop(&mut self) -> Result<Operand> {
+        self.stack.pop().ok_or(ErrorKind::SegmentationFault.into())
     }
 
     fn call_stack_pop(&mut self) -> (usize, usize) {
@@ -341,14 +341,14 @@ impl Machine {
             Instruction::Pushs(ref val) => self.pushs(val),
             Instruction::Pusha(ref val) => self.pusha(val),
             Instruction::Pushgp => self.pushgp(),
-            Instruction::Call => self.call(),
+            Instruction::Call => self.call()?,
             Instruction::Return => self.ret(),
             Instruction::Start => self.start(),
             Instruction::Nop => {}
             Instruction::Stop => return Ok(Status::Exit),
             Instruction::Loadn => self.loadn()?,
-            Instruction::Writei => self.writei(),
-            Instruction::Writes => self.writes(),
+            Instruction::Writei => self.writei()?,
+            Instruction::Writes => self.writes()?,
             Instruction::Read => self.read()?,
             Instruction::Atoi => self.atoi()?,
             Instruction::Padd => self.padd()?,
@@ -356,7 +356,7 @@ impl Machine {
             Instruction::Mul => self.mul()?,
             Instruction::Div => self.div()?,
             Instruction::Mod => self.module()?,
-            Instruction::Storeg(val) => self.storeg(val),
+            Instruction::Storeg(val) => self.storeg(val)?,
             Instruction::Storen => self.storen()?,
             Instruction::Equal => self.equal()?,
             Instruction::Inf => self.inf()?,
@@ -364,7 +364,7 @@ impl Machine {
             Instruction::Sup => self.sup()?,
             Instruction::Supeq => self.supeq()?,
             Instruction::Jump(ref val) => self.jump(val),
-            Instruction::Jz(ref val) => self.jz(val),
+            Instruction::Jz(ref val) => self.jz(val)?,
             Instruction::Err(ref err) => bail!(ErrorKind::Error(err.to_string())),
         }
         self.pc += 1;
@@ -431,8 +431,8 @@ impl Machine {
     }
 
     fn loadn(&mut self) -> Result<()> {
-        let n = self.stack_pop();
-        let a = self.stack_pop();
+        let n = self.stack_pop()?;
+        let a = self.stack_pop()?;
 
         if let Operand::Address(addr) = Operand::add(n, a)? {
             let v = self.stack[addr];
@@ -442,25 +442,26 @@ impl Machine {
         Ok(())
     }
 
-    fn writei(&mut self) {
-        let val = self.stack_pop();
+    fn writei(&mut self) -> Result<()> {
+        let val = self.stack_pop()?;
         if let Operand::Integer(i) = val {
             print!("{}", i);
             io::stdout().flush().expect("Could not flush stdout");
         } else {
-            panic!("writei: Not an Integer");
+            bail!(ErrorKind::IllegalOperand);
         }
-
+        Ok(())
     }
 
-    fn writes(&mut self) {
-        match self.stack_pop() {
+    fn writes(&mut self) -> Result<()> {
+        match self.stack_pop()? {
             Operand::Address(addr) => {
                 print!("{}", self.strings[addr]);
                 io::stdout().flush().expect("Could not flush stdout");
             }
             _ => panic!("writes: Must be address to write string"),
         }
+        Ok(())
     }
 
     fn read(&mut self) -> Result<()> {
@@ -472,7 +473,7 @@ impl Machine {
     }
 
     fn atoi(&mut self) -> Result<()> {
-        let adr = match self.stack_pop() {
+        let adr = match self.stack_pop()? {
             Operand::Address(addr) => self.strings.remove(addr),
             _ => bail!("atoi: Must be address to write string"),
         };
@@ -483,15 +484,16 @@ impl Machine {
         }
     }
 
-    fn storeg(&mut self, n: usize) {
-        let val = self.stack_pop();
+    fn storeg(&mut self, n: usize) -> Result<()> {
+        let val = self.stack_pop()?;
         self.stack[self.gp + n] = val;
+        Ok(())
     }
 
     fn storen(&mut self) -> Result<()> {
-        let v = self.stack_pop();
-        let n = self.stack_pop();
-        let a = self.stack_pop();
+        let v = self.stack_pop()?;
+        let n = self.stack_pop()?;
+        let a = self.stack_pop()?;
 
         if let Operand::Address(addr) = Operand::add(n, a)? {
             self.stack[addr] = v;
@@ -500,15 +502,17 @@ impl Machine {
         Ok(())
     }
 
-    fn call(&mut self) {
-        if let Operand::Address(addr) = self.stack_pop() {
-            self.call_stack.push((self.pc, self.fp));
+    fn call(&mut self) -> Result<()> {
+        match self.stack_pop()? {
+            Operand::Address(addr) => {
+                self.call_stack.push((self.pc, self.fp));
 
-            self.fp = self.sp();
-            self.pc = addr;
-        } else {
-            panic!("call: Not an Address");
+                self.fp = self.sp();
+                self.pc = addr;
+            }
+            _ => bail!(ErrorKind::IllegalOperand),
         }
+        Ok(())
     }
 
     fn ret(&mut self) {
@@ -519,8 +523,8 @@ impl Machine {
 
 
     fn binary_op<F: FnOnce(Operand, Operand) -> Result<Operand>>(&mut self, op: F) -> Result<()> {
-        let n = self.stack_pop();
-        let m = self.stack_pop();
+        let n = self.stack_pop()?;
+        let m = self.stack_pop()?;
 
         let val = op(n, m)?;
 
@@ -537,11 +541,11 @@ impl Machine {
         self.binary_op(Operand::add)
     }
 
-    fn mul(&mut self) -> Result<()>{
+    fn mul(&mut self) -> Result<()> {
         self.binary_op(Operand::mul)
     }
 
-    fn div(&mut self) -> Result<()>{
+    fn div(&mut self) -> Result<()> {
         self.binary_op(Operand::div)
     }
 
@@ -573,14 +577,15 @@ impl Machine {
         self.pc = self.labels[val] - 1;
     }
 
-    fn jz(&mut self, val: &str) {
-        let eq = self.stack_pop();
+    fn jz(&mut self, val: &str) -> Result<()> {
+        let eq = self.stack_pop()?;
 
         match eq {
             Operand::Integer(0) => self.jump(val),
             Operand::Integer(1) => {}
             _ => panic!("jz: Not an Integer(0|1)"),
         }
+        Ok(())
     }
 }
 
