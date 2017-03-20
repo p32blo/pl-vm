@@ -42,73 +42,74 @@ impl fmt::Display for Operand {
 }
 
 impl Operand {
-    fn add(n: &Self, a: &Self) -> Self {
+    fn add(n: Self, a: Self) -> Result<Self> {
         match (n, a) {
-            (&Operand::Integer(n), &Operand::Address(a)) => {
-                Operand::Address((a as i32 + n) as usize)
+            (Operand::Integer(n), Operand::Address(a)) => {
+                Ok(Operand::Address((a as i32 + n) as usize))
             }
-            (&Operand::Integer(n), &Operand::Integer(a)) => Operand::Integer(n + a),
-            _ => panic!(format!("Operand::add => Invalid Operation: {} + {}", n, a)),
+            (Operand::Integer(n), Operand::Integer(a)) => Ok(Operand::Integer(n + a)),
+            _ => bail!(ErrorKind::IllegalOperand),
         }
     }
 
-    fn mul(n: &Self, m: &Self) -> Self {
+    fn mul(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
-            (&Operand::Integer(n), &Operand::Integer(m)) => Operand::Integer(n * m),
-            _ => panic!(format!("Operand::mul => Invalid Operation: {} * {}", n, m)),
+            (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(n * m)),
+            _ => bail!(ErrorKind::IllegalOperand),
         }
     }
 
-    fn div(n: &Self, m: &Self) -> Self {
+    fn div(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
-            (&Operand::Integer(n), &Operand::Integer(m)) => Operand::Integer(m / n),
-            _ => panic!(format!("Operand::div => Invalid Operation: {} / {}", m, n)),
-        }
-    }
-    fn module(n: &Self, m: &Self) -> Self {
-        match (n, m) {
-            (&Operand::Integer(n), &Operand::Integer(m)) => Operand::Integer(m % n),
-            _ => panic!(format!("Operand::mod => Invalid Operation: {} % {}", m, n)),
+            (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(m / n)),
+            _ => bail!(ErrorKind::IllegalOperand),
         }
     }
 
-    fn equal(n: &Self, m: &Self) -> Self {
+    fn module(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
-            (&Operand::Integer(n), &Operand::Integer(m)) if n == m => Operand::Integer(1),
-            (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::equal => Invalid Operation: {} == {}", m, n)),
+            (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(m % n)),
+            _ => bail!(ErrorKind::IllegalOperand),
         }
     }
 
-    fn inf(n: &Self, m: &Self) -> Self {
+    fn equal(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
-            (&Operand::Integer(n), &Operand::Integer(m)) if m < n => Operand::Integer(1),
-            (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::sup => Invalid Operation: {} < {}", m, n)),
+            (Operand::Integer(n), Operand::Integer(m)) if n == m => Ok(Operand::Integer(1)),
+            (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
+            _ => bail!(ErrorKind::IllegalOperand),
         }
     }
 
-    fn infeq(n: &Self, m: &Self) -> Self {
+    fn inf(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
-            (&Operand::Integer(n), &Operand::Integer(m)) if m <= n => Operand::Integer(1),
-            (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::sup => Invalid Operation: {} <= {}", m, n)),
+            (Operand::Integer(n), Operand::Integer(m)) if m < n => Ok(Operand::Integer(1)),
+            (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
+            _ => panic!(ErrorKind::IllegalOperand),
         }
     }
 
-    fn sup(n: &Self, m: &Self) -> Self {
+    fn infeq(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
-            (&Operand::Integer(n), &Operand::Integer(m)) if m > n => Operand::Integer(1),
-            (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::sup => Invalid Operation: {} > {}", m, n)),
+            (Operand::Integer(n), Operand::Integer(m)) if m <= n => Ok(Operand::Integer(1)),
+            (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
+            _ => bail!(ErrorKind::IllegalOperand),
         }
     }
 
-    fn supeq(n: &Self, m: &Self) -> Self {
+    fn sup(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
-            (&Operand::Integer(n), &Operand::Integer(m)) if m >= n => Operand::Integer(1),
-            (&Operand::Integer(..), &Operand::Integer(..)) => Operand::Integer(0),
-            _ => panic!(format!("Operand::supeq => Invalid Operation: {} >= {}", m, n)),
+            (Operand::Integer(n), Operand::Integer(m)) if m > n => Ok(Operand::Integer(1)),
+            (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
+            _ => bail!(ErrorKind::IllegalOperand),
+        }
+    }
+
+    fn supeq(n: Self, m: Self) -> Result<Self> {
+        match (n, m) {
+            (Operand::Integer(n), Operand::Integer(m)) if m >= n => Ok(Operand::Integer(1)),
+            (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
+            _ => bail!(ErrorKind::IllegalOperand),
         }
     }
 }
@@ -169,7 +170,9 @@ impl Machine {
         // remove labels from code
         for instr in code_labels.iter().filter(|line| Self::is_label(line).is_none()) {
             self.code.push(instr.parse()
-                .chain_err(|| format!("Failed to parse '{}' instruction", instr))?);
+                               .chain_err(|| {
+                                              format!("Failed to parse '{}' instruction", instr)
+                                          })?);
         }
         Ok(())
     }
@@ -237,7 +240,10 @@ impl Machine {
                 }
                 println!();
 
-                for (i, val) in self.stack.iter().enumerate().rev() {
+                for (i, val) in self.stack
+                        .iter()
+                        .enumerate()
+                        .rev() {
                     print!("{}", val);
                     if self.fp == i {
                         print!(" <- fp");
@@ -248,13 +254,13 @@ impl Machine {
             }
             Command::Run => {
                 Ok(match status {
-                    Status::Success => {
-                        self.run()?;
-                        println!();
-                        Status::Exit
-                    }
-                    Status::Exit => status,
-                })
+                       Status::Success => {
+                    self.run()?;
+                    println!();
+                    Status::Exit
+                }
+                       Status::Exit => status,
+                   })
             }
             Command::Next(end) => {
                 if let Status::Success = status {
@@ -269,7 +275,7 @@ impl Machine {
                     }
                 }
                 Ok(status)
-            } 
+            }
             Command::Step(end) => {
                 if let Status::Success = status {
                     for _ in 0..end {
@@ -307,13 +313,13 @@ impl Machine {
             io::stdout().flush().expect("Could not flush stdout");
 
             let cmd = self.readline().unwrap_or_else(|ref e| {
-                errors::print_errs(e);
-                Command::Empty
-            });
+                                                         errors::print_errs(e);
+                                                         Command::Empty
+                                                     });
             status = self.debug(cmd, status).unwrap_or_else(|ref e| {
-                errors::print_errors(e);
-                Status::Exit
-            });
+                                                                errors::print_errors(e);
+                                                                Status::Exit
+                                                            });
         }
     }
 
@@ -340,26 +346,26 @@ impl Machine {
             Instruction::Start => self.start(),
             Instruction::Nop => {}
             Instruction::Stop => return Ok(Status::Exit),
-            Instruction::Loadn => self.loadn(),
+            Instruction::Loadn => self.loadn()?,
             Instruction::Writei => self.writei(),
             Instruction::Writes => self.writes(),
             Instruction::Read => self.read()?,
             Instruction::Atoi => self.atoi()?,
-            Instruction::Padd => self.padd(),
-            Instruction::Add => self.add(),
-            Instruction::Mul => self.mul(),
-            Instruction::Div => self.div(),
-            Instruction::Mod => self.module(),
+            Instruction::Padd => self.padd()?,
+            Instruction::Add => self.add()?,
+            Instruction::Mul => self.mul()?,
+            Instruction::Div => self.div()?,
+            Instruction::Mod => self.module()?,
             Instruction::Storeg(val) => self.storeg(val),
-            Instruction::Storen => self.storen(),
-            Instruction::Equal => self.equal(),
-            Instruction::Inf => self.inf(),
-            Instruction::Infeq => self.infeq(),
-            Instruction::Sup => self.sup(),
-            Instruction::Supeq => self.supeq(),
+            Instruction::Storen => self.storen()?,
+            Instruction::Equal => self.equal()?,
+            Instruction::Inf => self.inf()?,
+            Instruction::Infeq => self.infeq()?,
+            Instruction::Sup => self.sup()?,
+            Instruction::Supeq => self.supeq()?,
             Instruction::Jump(ref val) => self.jump(val),
             Instruction::Jz(ref val) => self.jz(val),
-            Instruction::Err(ref err) => bail!(format!("End execution with [{}]", err)),
+            Instruction::Err(ref err) => bail!(ErrorKind::Error(err.to_string())),
         }
         self.pc += 1;
 
@@ -424,16 +430,16 @@ impl Machine {
         self.fp = self.sp();
     }
 
-    fn loadn(&mut self) {
+    fn loadn(&mut self) -> Result<()> {
         let n = self.stack_pop();
         let a = self.stack_pop();
 
-        if let Operand::Address(addr) = Operand::add(&n, &a) {
+        if let Operand::Address(addr) = Operand::add(n, a)? {
             let v = self.stack[addr];
             self.stack.push(v);
-        } else {
-            panic!("loadn: Not an Address");
         }
+
+        Ok(())
     }
 
     fn writei(&mut self) {
@@ -466,14 +472,14 @@ impl Machine {
     }
 
     fn atoi(&mut self) -> Result<()> {
-        let str = match self.stack_pop() {
+        let adr = match self.stack_pop() {
             Operand::Address(addr) => self.strings.remove(addr),
             _ => bail!("atoi: Must be address to write string"),
         };
 
-        match str.parse() {
+        match adr.parse() {
             Ok(val) => Ok(self.pushi(val)),
-            Err(_) => bail!("Value is not a valid Integer"),
+            Err(_) => bail!(ErrorKind::IllegalOperand),
         }
     }
 
@@ -482,15 +488,16 @@ impl Machine {
         self.stack[self.gp + n] = val;
     }
 
-    fn storen(&mut self) {
+    fn storen(&mut self) -> Result<()> {
         let v = self.stack_pop();
         let n = self.stack_pop();
         let a = self.stack_pop();
 
-        match Operand::add(&n, &a) {
-            Operand::Address(addr) => self.stack[addr] = v,
-            _ => panic!("storen: Not an Address"),
+        if let Operand::Address(addr) = Operand::add(n, a)? {
+            self.stack[addr] = v;
         }
+
+        Ok(())
     }
 
     fn call(&mut self) {
@@ -511,52 +518,54 @@ impl Machine {
     }
 
 
-    fn binary_op<F: FnOnce(&Operand, &Operand) -> Operand>(&mut self, op: F) {
+    fn binary_op<F: FnOnce(Operand, Operand) -> Result<Operand>>(&mut self, op: F) -> Result<()> {
         let n = self.stack_pop();
         let m = self.stack_pop();
 
-        let val = op(&n, &m);
+        let val = op(n, m)?;
 
         self.stack.push(val);
+
+        Ok(())
     }
 
-    fn padd(&mut self) {
+    fn padd(&mut self) -> Result<()> {
         self.binary_op(Operand::add)
     }
 
-    fn add(&mut self) {
+    fn add(&mut self) -> Result<()> {
         self.binary_op(Operand::add)
     }
 
-    fn mul(&mut self) {
+    fn mul(&mut self) -> Result<()>{
         self.binary_op(Operand::mul)
     }
 
-    fn div(&mut self) {
+    fn div(&mut self) -> Result<()>{
         self.binary_op(Operand::div)
     }
 
-    fn module(&mut self) {
+    fn module(&mut self) -> Result<()> {
         self.binary_op(Operand::module)
     }
 
-    fn equal(&mut self) {
+    fn equal(&mut self) -> Result<()> {
         self.binary_op(Operand::equal)
     }
 
-    fn inf(&mut self) {
+    fn inf(&mut self) -> Result<()> {
         self.binary_op(Operand::inf)
     }
 
-    fn infeq(&mut self) {
+    fn infeq(&mut self) -> Result<()> {
         self.binary_op(Operand::infeq)
     }
 
-    fn sup(&mut self) {
+    fn sup(&mut self) -> Result<()> {
         self.binary_op(Operand::sup)
     }
 
-    fn supeq(&mut self) {
+    fn supeq(&mut self) -> Result<()> {
         self.binary_op(Operand::supeq)
     }
 

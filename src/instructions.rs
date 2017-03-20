@@ -74,7 +74,7 @@ impl FromStr for Instruction {
             "writei" => Instruction::Writei,
             "writes" => Instruction::Writes,
             "read" => Instruction::Read,
-            "atoi" => Instruction::Atoi, 
+            "atoi" => Instruction::Atoi,
             "padd" => Instruction::Padd,
             "add" => Instruction::Add,
             "mul" => Instruction::Mul,
