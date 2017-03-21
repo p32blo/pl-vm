@@ -49,7 +49,7 @@ mod errors {
             }
             Error(message: String) {
                 description("Triggered when the err statement is executed")
-                display("Error: {}", message)
+                display("{}", Red.paint(message.clone()))
             }
             Anomaly {
                 description("This error must never occur. If so please report it!")
@@ -69,7 +69,7 @@ mod errors {
 
     /// Print a multiline error chain
     pub fn print_errors(e: &Error) {
-        println!("\n{}{}", Red.paint("error: "), e);
+        println!("\n{}", Red.paint(e.to_string() + ":"));
         for e in e.iter().skip(1) {
             println!("{}{}", Red.paint("caused by: "), e);
         }

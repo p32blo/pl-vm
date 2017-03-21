@@ -61,6 +61,7 @@ impl Operand {
 
     fn div(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
+            (Operand::Integer(0), _) => bail!(ErrorKind::DivisionByZero),
             (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(m / n)),
             _ => bail!(ErrorKind::IllegalOperand),
         }
@@ -85,7 +86,7 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m < n => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => panic!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand),
         }
     }
 
@@ -194,8 +195,8 @@ impl Machine {
         self.stack.pop().ok_or(ErrorKind::SegmentationFault.into())
     }
 
-    fn call_stack_pop(&mut self) -> (usize, usize) {
-        self.call_stack.pop().expect("Call stack is empty")
+    fn call_stack_pop(&mut self) -> Result<(usize, usize)> {
+        self.call_stack.pop().ok_or(ErrorKind::SegmentationFault.into())
     }
 
     fn readline(&self) -> Result<Command> {
@@ -303,7 +304,7 @@ impl Machine {
 
 
 
-    fn run_debug(&mut self) -> () {
+    fn run_debug(&mut self) -> Result<()> {
         let mut status = Status::Success;
         loop {
             match status {
@@ -320,6 +321,7 @@ impl Machine {
                                                                 errors::print_errors(e);
                                                                 Status::Exit
                                                             });
+            bail!(ErrorKind::IllegalOperand);
         }
     }
 
@@ -342,7 +344,7 @@ impl Machine {
             Instruction::Pusha(ref val) => self.pusha(val),
             Instruction::Pushgp => self.pushgp(),
             Instruction::Call => self.call()?,
-            Instruction::Return => self.ret(),
+            Instruction::Return => self.ret()?,
             Instruction::Start => self.start(),
             Instruction::Nop => {}
             Instruction::Stop => return Ok(Status::Exit),
@@ -459,7 +461,7 @@ impl Machine {
                 print!("{}", self.strings[addr]);
                 io::stdout().flush().expect("Could not flush stdout");
             }
-            _ => panic!("writes: Must be address to write string"),
+            _ => bail!(ErrorKind::IllegalOperand),
         }
         Ok(())
     }
@@ -515,10 +517,11 @@ impl Machine {
         Ok(())
     }
 
-    fn ret(&mut self) {
-        let (pc, fp) = self.call_stack_pop();
+    fn ret(&mut self) -> Result<()> {
+        let (pc, fp) = self.call_stack_pop()?;
         self.pc = pc;
         self.fp = fp;
+        Ok(())
     }
 
 
@@ -583,7 +586,7 @@ impl Machine {
         match eq {
             Operand::Integer(0) => self.jump(val),
             Operand::Integer(1) => {}
-            _ => panic!("jz: Not an Integer(0|1)"),
+            _ => bail!(ErrorKind::IllegalOperand),
         }
         Ok(())
     }
@@ -596,7 +599,7 @@ pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     // println!("{:#?}", m);
     match mode {
         Mode::Running => m.run()?,
-        Mode::Debug => m.run_debug(),
+        Mode::Debug => m.run_debug()?,
     }
 
     Ok(())
