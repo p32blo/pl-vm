@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["André Oliveira <p32blo@gmail.com>"]
 
 [dependencies]
+nom = { version = "2", features = ["regexp"] }
 clap = { version = "2", default-features = false }
 unescape = "0.1"
 error-chain = { version = "0.7", default-features = false }

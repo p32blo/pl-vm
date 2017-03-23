@@ -169,7 +169,9 @@ impl Machine {
         // remove labels from code
         for instr in code_labels.iter().filter(|line| Self::is_label(line).is_none()) {
             self.code.push(instr.parse()
-                .chain_err(|| format!("Failed to parse '{}' instruction", instr))?);
+                               .chain_err(|| {
+                                              format!("Failed to parse '{}' instruction", instr)
+                                          })?);
         }
         Ok(())
     }
@@ -237,7 +239,10 @@ impl Machine {
                 }
                 println!();
 
-                for (i, val) in self.stack.iter().enumerate().rev() {
+                for (i, val) in self.stack
+                        .iter()
+                        .enumerate()
+                        .rev() {
                     print!("{}", val);
                     if self.fp == i {
                         print!(" <- fp");
@@ -248,13 +253,13 @@ impl Machine {
             }
             Command::Run => {
                 Ok(match status {
-                    Status::Success => {
-                        self.run()?;
-                        println!();
-                        Status::Exit
-                    }
-                    Status::Exit => status,
-                })
+                       Status::Success => {
+                    self.run()?;
+                    println!();
+                    Status::Exit
+                }
+                       Status::Exit => status,
+                   })
             }
             Command::Next(end) => {
                 if let Status::Success = status {
@@ -307,13 +312,13 @@ impl Machine {
             io::stdout().flush().expect("Could not flush stdout");
 
             let cmd = self.readline().unwrap_or_else(|ref e| {
-                errors::print_errs(e);
-                Command::Empty
-            });
+                                                         errors::print_errs(e);
+                                                         Command::Empty
+                                                     });
             status = self.debug(cmd, status).unwrap_or_else(|ref e| {
-                errors::print_errors(e);
-                Status::Exit
-            });
+                                                                errors::print_errors(e);
+                                                                Status::Exit
+                                                            });
         }
     }
 
@@ -338,7 +343,8 @@ impl Machine {
             Instruction::Call => self.call(),
             Instruction::Return => self.ret(),
             Instruction::Start => self.start(),
-            Instruction::Nop => {}
+            Instruction::Nop |
+            Instruction::Label(_) => {}
             Instruction::Stop => return Ok(Status::Exit),
             Instruction::Loadn => self.loadn(),
             Instruction::Writei => self.writei(),
