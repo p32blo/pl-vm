@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use errors;
 use errors::*;
 
+use parser;
 use instructions::Instruction;
 use commands::{Command, Status};
 
@@ -147,6 +148,8 @@ impl Machine {
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).chain_err(|| "Unable to Read file")?;
 
+        println!("{:?}", parser::code(&buffer));
+
         // Strip comments and remove empty lines
         let code_labels: Vec<String> = buffer.lines()
             .map(|x| Self::strip_comments(&x.trim().to_lowercase()))
@@ -274,7 +277,7 @@ impl Machine {
                     }
                 }
                 Ok(status)
-            } 
+            }
             Command::Step(end) => {
                 if let Status::Success = status {
                     for _ in 0..end {
@@ -344,9 +347,10 @@ impl Machine {
             Instruction::Return => self.ret(),
             Instruction::Start => self.start(),
             Instruction::Nop |
-            Instruction::Label(..) | 
-            Instruction::Pushf(..) |
-            Instruction::Check(..)=> {}
+            Instruction::Label(..)
+            //Instruction::Pushf(..) |
+            // Instruction::Check(..)
+            => {}
             Instruction::Stop => return Ok(Status::Exit),
             Instruction::Loadn => self.loadn(),
             Instruction::Writei => self.writei(),
@@ -588,6 +592,7 @@ pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     let mut m = Machine::new();
     m.load(&path).chain_err(|| format!("Cannot load file '{}'", path.as_ref().display()))?;
     // println!("{:#?}", m);
+
     match mode {
         Mode::Running => m.run()?,
         Mode::Debug => m.run_debug(),

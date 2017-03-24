@@ -68,7 +68,6 @@ fn main() {
         Mode::Running
     };
 
-    println!("{:?}", parser::code("test: add"));
 
     // There is a file argument
     if let Some(file) = matches.value_of("input") {

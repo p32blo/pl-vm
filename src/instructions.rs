@@ -11,8 +11,8 @@ use errors::*;
 /// Possible `vm` instructions
 #[derive(Clone, Debug)]
 pub enum Instruction {
-    Check(i32, i32),
-    Pushf(f32),
+    //Check(i32, i32),
+    //Pushf(f32),
     Pushi(i32),
     Pushn(i32),
     Pushg(usize),
@@ -103,8 +103,8 @@ impl FromStr for Instruction {
 impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Instruction::Check(ref val_a, ref val_b) => write!(f, "check {} {}", val_a, val_b),
-            Instruction::Pushf(ref val) => write!(f, "pushf {}", val),
+            //Instruction::Check(ref val_a, ref val_b) => write!(f, "check {} {}", val_a, val_b),
+            //Instruction::Pushf(ref val) => write!(f, "pushf {}", val),
             Instruction::Pushi(ref val) => write!(f, "pushi {}", val),
             Instruction::Pushn(ref val) => write!(f, "pushn {}", val),
             Instruction::Pushg(ref val) => write!(f, "pushg {}", val),
