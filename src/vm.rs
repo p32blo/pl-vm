@@ -344,7 +344,9 @@ impl Machine {
             Instruction::Return => self.ret(),
             Instruction::Start => self.start(),
             Instruction::Nop |
-            Instruction::Label(_) => {}
+            Instruction::Label(..) | 
+            Instruction::Pushf(..) |
+            Instruction::Check(..)=> {}
             Instruction::Stop => return Ok(Status::Exit),
             Instruction::Loadn => self.loadn(),
             Instruction::Writei => self.writei(),
