@@ -302,8 +302,6 @@ Every program follows the following syntax:
 	               | drawpoint | drawline | drawcircle
 	               | cleardrawingarea | opendrawingarea | setcolor | refresh
 	               | start | nop | stop | allocn | free | dupn | popn
-	               | pushi | pushn | pushg | pushl | load
-	               | dup | pop | storel | storeg | alloc
 				   
 	<instr_int> ::= pushi | pushn | pushg | pushl | load
 	              | dup | pop | storel | storeg | alloc
