@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["André Oliveira <p32blo@gmail.com>"]
 
 [dependencies]
+regex = "0.2.1"
 nom = { version = "2", features = ["regexp"] }
 clap = { version = "2", default-features = false }
 unescape = "0.1"

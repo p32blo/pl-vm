@@ -5,26 +5,8 @@ use std::str::FromStr;
 
 use instructions::Instruction;
 
-named!(digit1<&str, &str>, flat_map!(take!(1), nom::digit));
-named!(alpha1<&str, &str>, flat_map!(take!(1), nom::alpha));
-named!(ident1<&str,&str>, alt!(tag!("_") | alpha1));
-named!(ident2<&str,Vec<&str>>, many0!(alt!(digit1 | alpha1 | tag!("_") | tag!("'"))));
-
-named!(ident<&str, String>,
-    do_parse!(
-        id1: ident1 >>
-        id2: ident2 >>
-        (id1.to_string() + &id2.join(""))
-    )
-);
-
-named!(string<&str, &str>,
-    delimited!(
-        tag!("\""),
-        take_until!("\""),
-        tag!("\"")
-    )
-);
+named!(ident<&str, &str>, re_find!(r#"([[:alpha:]]|_)([[:alpha:]]|[[:digit:]]|_|')*"#));
+named!(string<&str, &str>, do_parse!(res: re_capture!(r#"(")((\\"|[^"])*)(")"#) >> (res[2])));
 
 named!(comment<&str, &str>,
     delimited!(
@@ -50,7 +32,7 @@ named!(pub code<&str, Vec<Instruction>>,
 named!(instr<&str, Instruction>,
     alt!( instr_atom
         | do_parse!(
-            id: ident >>
+            id: map!(ident, String::from) >>
             ws!(tag!(":")) >>
             (Instruction::Label(id))
         )
@@ -83,7 +65,7 @@ named!(instr<&str, Instruction>,
         // )
         | do_parse!(
             ins: instr_ident >>
-            arg: ws!(ident) >>
+            arg: ws!(map!(ident, String::from)) >>
             (ins(arg))
         )
     )
