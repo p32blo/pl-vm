@@ -148,44 +148,32 @@ impl Machine {
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).chain_err(|| "Unable to Read file")?;
 
-        println!("{:?}", parser::code(&buffer));
+        // Parse the file
+        let code = parser::code(&buffer);
+        println!("1: {:?}", &code);
 
-        // Strip comments and remove empty lines
-        let code_labels: Vec<String> = buffer.lines()
-            .map(|x| Self::strip_comments(&x.trim().to_lowercase()))
-            .filter(|x| !x.is_empty())
-            .collect();
+        let code = code.to_result().chain_err(|| "Failed to parse file")?;
+        println!("2: {:?}", &code);
+
+        // clear code on a new load
+        self.labels.clear();
+        self.code.clear();
 
         // inserted labels so far
         let mut acc = 0;
 
-        self.labels.clear();
         // insert labels with the correct pointer
-        for (i, line) in code_labels.iter().enumerate() {
-            if let Some(val) = Self::is_label(line) {
-                self.labels.insert(val, i - acc);
+        for (i, instr) in code.iter().enumerate() {
+            if let Instruction::Label(ref val) = *instr {
+                self.labels.insert(val.clone(), i - acc);
                 acc += 1;
             }
         }
 
-        self.code.clear();
         // remove labels from code
-        for instr in code_labels.iter().filter(|line| Self::is_label(line).is_none()) {
-            self.code.push(instr.parse()
-                               .chain_err(|| {
-                                              format!("Failed to parse '{}' instruction", instr)
-                                          })?);
-        }
-        Ok(())
-    }
+        self.code = code.into_iter().filter(|x| !x.is_label()).collect();
 
-    fn is_label(line: &str) -> Option<String> {
-        let mut inst = line.to_string();
-        if inst.ends_with(':') {
-            inst.pop().unwrap();
-            return Some(inst);
-        }
-        None
+        Ok(())
     }
 
     fn sp(&self) -> usize {
@@ -376,16 +364,6 @@ impl Machine {
         self.pc += 1;
 
         Ok(Status::Success)
-    }
-
-    fn strip_comments(inst: &str) -> String {
-        match inst.find("//") {
-            None => inst.to_string(),
-            Some(f) => {
-                let (inst, _) = inst.split_at(f);
-                inst.trim().to_string()
-            }
-        }
     }
 
     fn get_instruction(&self) -> Instruction {
@@ -597,6 +575,8 @@ pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
         Mode::Running => m.run()?,
         Mode::Debug => m.run_debug(),
     }
+
+    println!();
 
     Ok(())
 }

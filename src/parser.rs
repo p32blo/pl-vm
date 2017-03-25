@@ -1,8 +1,9 @@
 
+use nom;
+
 use std::str::FromStr;
 
 use instructions::Instruction;
-use nom;
 
 named!(digit1<&str, &str>, flat_map!(take!(1), nom::digit));
 named!(alpha1<&str, &str>, flat_map!(take!(1), nom::alpha));
@@ -25,11 +26,29 @@ named!(string<&str, &str>,
     )
 );
 
-named!(pub code<&str, Vec<Instruction>>, many0!(ws!(instr)));
+named!(comment<&str, &str>,
+    delimited!(
+        ws!(tag!("//")),
+        take_until!("\n"),
+        opt!(nom::eol)
+    )
+);
+
+named!(pub code<&str, Vec<Instruction>>,
+    terminated!(
+        many1!(
+            delimited!(
+                many0!(comment),
+                ws!(instr),
+                many0!(comment)
+            )
+        ), 
+        eof!()
+    )
+);
 
 named!(instr<&str, Instruction>,
-    alt!(
-        instr_atom
+    alt!( instr_atom
         | do_parse!(
             id: ident >>
             ws!(tag!(":")) >>
@@ -78,27 +97,34 @@ named!(instr_atom<&str, Instruction>,
         | tag!("div") => { |_| Instruction::Div }
         | tag!("mod") => { |_| Instruction::Mod }
         //| tag!("not") => { |_| Instruction::Not }
-        | tag!("inf") => { |_| Instruction::Inf }
         | tag!("infeq") => { |_| Instruction::Infeq }
-        | tag!("sup") => { |_| Instruction::Sup }
+        | tag!("inf") => { |_| Instruction::Inf }
 
         | tag!("supeq") => { |_| Instruction::Supeq }
+        | tag!("sup") => { |_| Instruction::Sup }
         //| tag!("fadd") => { |_| Instruction::FAdd }
         //| tag!("fsub") => { |_| Instruction::FSub }
         //| tag!("fmul") => { |_| Instruction::FMull }
         //| tag!("fdiv") | tag!("fcos") | tag!("fsin") |
         // tag!("finf") | tag!("finfeq") | tag!("fsup")
-        //| tag!("fsupeq") | tag!("concat") | tag!("equal")
-        //| tag!("atoi") | tag!("atof") |
+        //| tag!("fsupeq") | tag!("concat")
+        | tag!("equal") => { |_| Instruction::Equal }
+        | tag!("atoi") => { |_| Instruction::Atoi }
+        //| tag!("atof") |
         //tag!("itof") | tag!("ftoi") | tag!("stri") | tag!("strf") |
         | tag!("padd") => {|_| Instruction::Padd }
         //tag!("pushsp") | tag!("pushfp")
         | tag!("pushgp") => {|_| Instruction::Pushgp}
         | tag!("loadn") => { |_| Instruction::Loadn }
-        // | tag!("storen") | tag!("swap") |
+        | tag!("storen") => { |_| Instruction::Storen }
+        // | tag!("swap") |
         | tag!("writei") => { |_| Instruction::Writei }
-        // | tag!("writef") | tag!("writes") | tag!("read") | tag!("call") | tag!("return") |
-        //tag!("drawpoint") | tag!("drawline") | tag!("drawcircle") |
+        // | tag!("writef")
+        | tag!("writes") => { |_| Instruction::Writes }
+        | tag!("read") => { |_| Instruction::Read }
+        | tag!("call") => { |_| Instruction::Call }
+        | tag!("return") => { |_| Instruction::Return }
+        // |tag!("drawpoint") | tag!("drawline") | tag!("drawcircle") |
         //tag!("cleardrawingarea") | tag!("opendrawingarea") | tag!("setcolor") | tag!("refresh") |
         | tag!("start") => { |_| Instruction::Start}
         | tag!("nop") =>  { |_| Instruction::Nop}
@@ -140,8 +166,8 @@ named!(instr_uint<&str, fn(usize) -> Instruction>,
 
 named!(instr_int<&str, fn(i32) -> Instruction>,
     alt!(
-        tag!("pushi") => {|_|Instruction::Pushi}
-        | tag!("pushn") => {|_|Instruction::Pushn}
+        tag!("pushi") => {|_|Instruction::Pushi }
+        | tag!("pushn") => {|_|Instruction::Pushn }
 //        | tag!("pushl") => { |_| Instruction::pushl }
 //        | tag!("load") => { |_| Instruction::Load }
 

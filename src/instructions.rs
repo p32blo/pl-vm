@@ -169,4 +169,11 @@ impl Instruction {
             _ => {}
         }
     }
+
+    pub fn is_label(&self) -> bool {
+        match *self {
+            Instruction::Label(..) => true,
+            _ => false,
+        }
+    }
 }
