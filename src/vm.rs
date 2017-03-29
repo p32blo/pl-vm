@@ -148,12 +148,12 @@ impl Machine {
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).chain_err(|| "Unable to Read file")?;
 
-        // Parse the file
-        let code = parser::code(&buffer);
-        println!("1: {:?}", &code);
+        parser::parse(&buffer);
 
-        let code = code.to_result().chain_err(|| "Failed to parse file")?;
-        println!("2: {:?}", &code);
+        // Parse the file
+        let code = parser::parse(&buffer);
+
+        println!("{:?}", &code);
 
         // clear code on a new load
         self.labels.clear();
@@ -389,8 +389,8 @@ impl Machine {
         self.push_reg(gp);
     }
 
-    fn pushg(&mut self, val: usize) {
-        let addr = self.gp + val;
+    fn pushg(&mut self, val: i32) {
+        let addr = self.gp + val as usize;
         let value = self.stack[addr];
 
         self.stack.push(value);
@@ -406,6 +406,7 @@ impl Machine {
     }
 
     fn pusha(&mut self, val: &str) {
+        println!("{:#?}", self.labels);
         let addr = self.labels[val] - 1;
         self.stack.push(Operand::Address(addr));
     }
@@ -467,9 +468,9 @@ impl Machine {
         }
     }
 
-    fn storeg(&mut self, n: usize) {
+    fn storeg(&mut self, n: i32) {
         let val = self.stack_pop();
-        self.stack[self.gp + n] = val;
+        self.stack[self.gp + n as usize] = val;
     }
 
     fn storen(&mut self) {

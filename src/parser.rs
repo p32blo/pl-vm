@@ -1,161 +1,213 @@
 
-use nom;
 
-use std::str::FromStr;
+use pest::prelude::*;
 
 use instructions::Instruction;
 
-named!(ident<&str, &str>, re_find!(r#"([[:alpha:]]|_)([[:alpha:]]|[[:digit:]]|_|')*"#));
-named!(string<&str, &str>, do_parse!(res: re_capture!(r#"(")((\\"|[^"])*)(")"#) >> (res[2])));
+impl_rdp! {
+    grammar! {
+        // Lexical Rules
+        digit = _{ ['0'..'9'] }
+        alpha = _{ ['A'..'Z'] | ['a'..'z'] }
+        ident = @{ ( alpha | ["_"] ) ~ ( alpha | digit | ["_"] | ["'"] )* }
 
-named!(comment<&str, &str>,
-    delimited!(
-        ws!(tag!("//")),
-        take_until!("\n"),
-        opt!(nom::eol)
-    )
-);
+        integer = @{ ["-"]? ~ digit+}
+        float = @{ ["-"]? ~ digit+ ~ (["."] ~ digit*)? ~ ((["e"]|["E"]) ~ (["+"]|["-"])? ~ digit+)? }
 
-named!(pub code<&str, Vec<Instruction>>,
-    terminated!(
-        many1!(
-            delimited!(
-                many0!(comment),
-                ws!(instr),
-                many0!(comment)
-            )
-        ), 
-        eof!()
-    )
-);
+        quote = _{["\""]}
 
-named!(instr<&str, Instruction>,
-    alt!( instr_atom
-        | do_parse!(
-            id: map!(ident, String::from) >>
-            ws!(tag!(":")) >>
-            (Instruction::Label(id))
-        )
-        | do_parse!(
-            ins: instr_int >>
-            arg: ws!(map_res!(nom::digit, FromStr::from_str)) >>
-            (ins(arg))
-        )
-        | do_parse!(
-            ins: instr_uint >>
-            arg: ws!(map_res!(nom::digit, FromStr::from_str)) >>
-            (ins(arg))
-        )
-        // | do_parse!(
-        //     tag!("pushf") >>
-        //     fl: ws!(nom::float_s) >>
-        //     (Instruction::Pushf(fl))
-        // )
-        | do_parse!(
-            ins: instr_str >>
-            arg: ws!(string) >>
-            (ins(arg.to_string()))
-        )
-        // | do_parse!(
-        //     tag!("check") >>
-        //     st: ws!(map_res!(nom::digit, FromStr::from_str)) >>
-        //     ws!(tag!(",")) >>
-        //     nd: ws!(map_res!(nom::digit, FromStr::from_str)) >>
-        //     (Instruction::Check(st, nd))
-        // )
-        | do_parse!(
-            ins: instr_ident >>
-            arg: ws!(map!(ident, String::from)) >>
-            (ins(arg))
-        )
-    )
-);
+        string = @{ quote ~ (["\\\""]|!quote ~ any)* ~ quote }
 
-named!(instr_atom<&str, Instruction>,
-    alt!(
-        tag!("add") => { |_| Instruction::Add }
-        //| tag!("sub") => { |_| Instruction::Sub }
-        | tag!("mul") => { |_| Instruction::Mul }
-        | tag!("div") => { |_| Instruction::Div }
-        | tag!("mod") => { |_| Instruction::Mod }
-        //| tag!("not") => { |_| Instruction::Not }
-        | tag!("infeq") => { |_| Instruction::Infeq }
-        | tag!("inf") => { |_| Instruction::Inf }
+        padd = {["padd"]}
+        add = {["add"]}
+        sub = {["sub"]}
+        mul = {["mul"]}
+        div = {["div"]}
+        mod_ = {["mod"]}
+        not = {["not"]}
+        inf = {["inf"]}
+        infeq = {["infeq"]}
+        sup = {["sup"]}
 
-        | tag!("supeq") => { |_| Instruction::Supeq }
-        | tag!("sup") => { |_| Instruction::Sup }
-        //| tag!("fadd") => { |_| Instruction::FAdd }
-        //| tag!("fsub") => { |_| Instruction::FSub }
-        //| tag!("fmul") => { |_| Instruction::FMull }
-        //| tag!("fdiv") | tag!("fcos") | tag!("fsin") |
-        // tag!("finf") | tag!("finfeq") | tag!("fsup")
-        //| tag!("fsupeq") | tag!("concat")
-        | tag!("equal") => { |_| Instruction::Equal }
-        | tag!("atoi") => { |_| Instruction::Atoi }
-        //| tag!("atof") |
-        //tag!("itof") | tag!("ftoi") | tag!("stri") | tag!("strf") |
-        | tag!("padd") => {|_| Instruction::Padd }
-        //tag!("pushsp") | tag!("pushfp")
-        | tag!("pushgp") => {|_| Instruction::Pushgp}
-        | tag!("loadn") => { |_| Instruction::Loadn }
-        | tag!("storen") => { |_| Instruction::Storen }
-        // | tag!("swap") |
-        | tag!("writei") => { |_| Instruction::Writei }
-        // | tag!("writef")
-        | tag!("writes") => { |_| Instruction::Writes }
-        | tag!("read") => { |_| Instruction::Read }
-        | tag!("call") => { |_| Instruction::Call }
-        | tag!("return") => { |_| Instruction::Return }
-        // |tag!("drawpoint") | tag!("drawline") | tag!("drawcircle") |
-        //tag!("cleardrawingarea") | tag!("opendrawingarea") | tag!("setcolor") | tag!("refresh") |
-        | tag!("start") => { |_| Instruction::Start}
-        | tag!("nop") =>  { |_| Instruction::Nop}
-        | tag!("stop") => { |_| Instruction::Stop }
-        // | tag!("allocn") | tag!("free") | tag!("dupn") | tag!("popn")
-        //| tag!("pushl") | tag!("load") |
-        //tag!("dup") | tag!("pop") | tag!("storel") | tag!("storeg") | tag!("alloc")
-    )
-);
+        supeq = {["supeq"]}
+        fadd = {["fadd"]}
+        fsub = {["fsub"]}
+        fmul = {["fmul"]}
+        fdiv = {["fdiv"]}
+        fcos = {["fcos"]}
+        fsin = {["fsin"]}
 
-named!(instr_str<&str, fn(String) -> Instruction>,
-    alt!(
-        tag!("pushs") => { |_| Instruction::Pushs }
-        | tag!("err") => { |_| Instruction::Err }
-    )
-);
+        finf = {["finf"]}
+        finfeq = {["finfeq"]}
+        fsup = {["fsup"]}
+        fsupeq = {["fsupeq"]}
+        concat = {["concat"]}
+        equal = {["equal"]}
+        atoi = {["atoi"]}
+        atof = {["atof"]}
 
-named!(instr_ident<&str, fn(String) -> Instruction>,
-    alt!(
-        tag!("jump") => { |_| Instruction::Jump }
-        | tag!("jz") => { |_| Instruction::Jz }
-        | tag!("pusha") => { |_| Instruction::Pusha }
-    )
-);
+        itof = {["itof"]}
+        ftoi = {["ftoi"]}
+        stri = {["stri"]}
+        strf = {["strf"]}
 
-named!(instr_uint<&str, fn(usize) -> Instruction>,
-    alt!(
-         tag!("pushg") => {|_|Instruction::Pushg}
-//        | tag!("pushl") => { |_| Instruction::pushl }
-//        | tag!("load") => { |_| Instruction::Load }
+        pushsp = {["pushsp"]}
+        pushfp = {["pushfp"]}
+        pushgp = {["pushgp"]}
+        loadn = {["loadn"]}
+        storen = {["storen"]}
+        swap = {["swap"]}
 
-//        | tag!("dup") => { |_| Instruction::Dup }
-//        | tag!("pop") => { |_| Instruction::Pop }
-//        | tag!("storel") => { |_| Instruction::Storel }
-        | tag!("storeg") => {|_|Instruction::Storeg}
-//        | tag!("alloc") => { |_| Instruction::Alloc }
-    )
-);
+        writei = {["writei"]}
+        writef = {["writef"]}
+        writes = {["writes"]}
+        read = {["read"]}
+        call = {["call"]}
+        return_ = {["return"]}
 
-named!(instr_int<&str, fn(i32) -> Instruction>,
-    alt!(
-        tag!("pushi") => {|_|Instruction::Pushi }
-        | tag!("pushn") => {|_|Instruction::Pushn }
-//        | tag!("pushl") => { |_| Instruction::pushl }
-//        | tag!("load") => { |_| Instruction::Load }
+        drawpoint = {["drawpoint"]}
+        drawline = {["drawline"]}
+        drawcircle = {["drawcircle"]}
 
-//        | tag!("dup") => { |_| Instruction::Dup }
-//        | tag!("pop") => { |_| Instruction::Pop }
-//        | tag!("storel") => { |_| Instruction::Storel }
-//        | tag!("alloc") => { |_| Instruction::Alloc }
-    )
-);
+        cleardrawingarea = {["cleardrawingarea"]}
+        opendrawingarea = {["opendrawingarea"]}
+        setcolor = {["setcolor"]}
+        refresh = {["refresh"]}
+
+        start = {["start"]}
+        nop = {["nop"]}
+        stop = {["stop"]}
+        allocn = {["allocn"]}
+        free = {["free"]}
+        dupn = {["dupn"]}
+        popn = {["popn"]}
+
+
+        pushi = {["pushi"]}
+        pushn = {["pushn"]}
+        pushg = {["pushg"]}
+        pushl = {["pushl"]}
+        load = {["load"]}
+
+        dup = {["dup"]}
+        pop = {["pop"]}
+        storel = {["storel"]}
+        storeg = {["storeg"]}
+        alloc = {["alloc"]}
+
+        pushf = {["pushf"]}
+
+        pushs = {["pushs"]}
+        err = {["err"]}
+
+        check = {["check"]}
+
+        jump = {["jump"]}
+        jz = {["jz"]}
+        pusha = {["pusha"]}
+
+        // Grammar Rules
+        code = _{ soi ~ instr* ~ eoi }
+
+        instr = {
+            ident ~ [":"]
+            | instr_atom
+            | instr_int ~ integer
+            | pushf ~ float
+            | ( pushs | err) ~ string
+            | check ~ integer ~ [","] ~ integer
+            | (jump | jz | pusha) ~ ident
+        }
+        instr_atom = {
+            padd | add | sub | mul | div | mod_ | not | inf | infeq | sup
+            | supeq | fadd | fsub | fmul | fdiv | fcos | fsin
+            | finf | finfeq | fsup | fsupeq | concat | equal | atoi | atof
+            | itof | ftoi | stri | strf
+            | pushsp | pushfp | pushgp | loadn | storen | swap
+            | writei | writef | writes | read | call | return_
+            | drawpoint | drawline | drawcircle
+            | cleardrawingarea | opendrawingarea | setcolor | refresh
+            | start | nop | stop | allocn | free | dupn | popn
+        }
+        instr_int = {
+            pushi | pushn | pushg | pushl | load
+            | dup | pop | storel | storeg | alloc
+        }
+        comment = _{ ["//"] ~ (!["\n"] ~ any)* ~ ["\n"] }
+        whitespace = _{ [" "] | ["\n"] | ["\r"] | ["\t"] }
+    }
+
+    process! {
+        compute(&self) -> Vec<Instruction> {
+            (_: instr, head: instruction(), mut tail: compute()) => {
+                tail.insert(0, head);
+                tail    
+            },
+            () => {
+                Vec::new()
+            }
+        }
+
+        instruction(&self) -> Instruction {
+            (&id: ident) => Instruction::Label(id.to_string()),
+
+            (_: pushs, &s: string) => Instruction::Pushs(s.to_string()),
+            (_: err, &s: string) => Instruction::Err(s.to_string()),
+
+            (_:jump, &id:ident) => Instruction::Jump(id.to_string()),
+            (_:jz, &id:ident) => Instruction::Jz(id.to_string()),
+            (_:pusha, &id:ident) => Instruction::Pusha(id.to_string()),
+
+            (_: instr_atom) => self.atom(),
+            (_: instr_int, res: int(), &i:integer) => res(i.parse().unwrap()),
+
+            (&a) => panic!(format!("Instruction not found: {}", a)),
+        }
+
+        int(&self) -> fn(i32) -> Instruction {
+            (_: pushi) => Instruction::Pushi,
+            (_: pushn) => Instruction::Pushn,
+            (_: pushg) => Instruction::Pushg,
+            (_: storeg) => Instruction::Storeg,
+            (&a) => panic!(format!("Instruction not found: {}", a)),
+        }
+
+        atom(&self) -> Instruction {
+            (_: padd) => Instruction::Padd,
+            (_: add) => Instruction::Add,
+            (_: mul) => Instruction::Mul,
+            (_: div) => Instruction::Div,
+            (_: mod_) => Instruction::Mod,
+            (_: inf) => Instruction::Inf,
+            (_: infeq) => Instruction::Infeq,
+            (_: sup) => Instruction::Sup,
+
+            (_: supeq) => Instruction::Supeq,
+            
+            (_: equal) => Instruction::Equal,
+            (_: atoi) => Instruction::Atoi,
+           
+            (_: pushgp) => Instruction::Pushgp,
+            (_: loadn) => Instruction::Loadn,
+            (_: storen) => Instruction::Storen,
+           
+            (_: writei) => Instruction::Writei,
+            (_: writes) => Instruction::Writes,
+            (_: read) => Instruction::Read,
+            (_: call) => Instruction::Call,
+            (_: return_) => Instruction::Return,
+
+            (_: start) => Instruction::Start,
+            (_: nop) => Instruction::Nop,
+            (_: stop) => Instruction::Stop,
+
+            (&a) => panic!(format!("Instruction not found: {}", a)),
+        }
+    }
+}
+
+pub fn parse(input: &str) -> Vec<Instruction> {
+    let mut parser = Rdp::new(StringInput::new(input));
+    parser.code();
+    parser.compute()
+}
