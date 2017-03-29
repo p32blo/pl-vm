@@ -14,9 +14,8 @@ impl_rdp! {
         integer = @{ ["-"]? ~ digit+}
         float = @{ ["-"]? ~ digit+ ~ (["."] ~ digit*)? ~ ((["e"]|["E"]) ~ (["+"]|["-"])? ~ digit+)? }
 
-        quote = _{["\""]}
-
-        string = @{ quote ~ (["\\\""]|!quote ~ any)* ~ quote }
+        string = @{ ["\""] ~ inner_string ~ ["\""] }
+        inner_string = { (["\\\""]|!["\""] ~ any)* }
 
         padd = {["padd"]}
         add = {["add"]}
@@ -151,8 +150,8 @@ impl_rdp! {
         instruction(&self) -> Instruction {
             (&id: ident) => Instruction::Label(id.to_string()),
 
-            (_: pushs, &s: string) => Instruction::Pushs(s.to_string()),
-            (_: err, &s: string) => Instruction::Err(s.to_string()),
+            (_: pushs, _: string, &s: inner_string) => Instruction::Pushs(s.to_string()),
+            (_: err, _: string, &s: inner_string) => Instruction::Err(s.to_string()),
 
             (_:jump, &id:ident) => Instruction::Jump(id.to_string()),
             (_:jz, &id:ident) => Instruction::Jz(id.to_string()),
@@ -209,5 +208,10 @@ impl_rdp! {
 pub fn parse(input: &str) -> Vec<Instruction> {
     let mut parser = Rdp::new(StringInput::new(input));
     parser.code();
+    println!("{:?}",
+             parser.queue_with_captures()
+                 .iter()
+                 .map(|x| &x.1)
+                 .collect::<Vec<_>>());
     parser.compute()
 }
