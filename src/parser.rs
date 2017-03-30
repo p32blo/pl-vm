@@ -110,7 +110,7 @@ impl_rdp! {
         sp = _{ ( [" "] | ["\t"] ) }
 
         // Grammar Rules
-        code = _{ soi ~ instr? ~ (instr)* ~ eoi }
+        code = _{ soi ~ (instr)* ~ eoi }
 
         instr = @{
             ident ~ sp* ~ [":"]
@@ -162,9 +162,7 @@ impl_rdp! {
             (_:pusha, &id:ident) => Instruction::Pusha(id.to_string()),
 
             (_: instr_atom) => self.atom(),
-            (_: instr_int, res: int(), &i:integer) => res(i.parse().unwrap()),
-
-            (&a) => panic!(format!("Instruction not found: {}", a)),
+            (_: instr_int, res: int(), &i: integer) => res(i.parse().unwrap()),
         }
 
         int(&self) -> fn(i32) -> Instruction {
@@ -172,7 +170,6 @@ impl_rdp! {
             (_: pushn) => Instruction::Pushn,
             (_: pushg) => Instruction::Pushg,
             (_: storeg) => Instruction::Storeg,
-            (&a) => panic!(format!("Instruction not found: {}", a)),
         }
 
         atom(&self) -> Instruction {
@@ -203,8 +200,6 @@ impl_rdp! {
             (_: start) => Instruction::Start,
             (_: nop) => Instruction::Nop,
             (_: stop) => Instruction::Stop,
-
-            (&a) => panic!(format!("Instruction not found: {}", a)),
         }
     }
 }
