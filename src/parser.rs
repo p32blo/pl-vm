@@ -122,9 +122,9 @@ impl_rdp! {
             | (jump | jz | pusha) ~ sp+ ~ ident
         }
         instr_atom = {
-            padd | add | sub | mul | div | mod_ | not | inf | infeq | supeq
+            padd | add | sub | mul | div | mod_ | not | infeq | inf | supeq
             | sup | fadd | fsub | fmul | fdiv | fcos | fsin
-            | finf | finfeq | fsup | fsupeq | concat | equal | atoi | atof
+            | finfeq | finf | fsupeq | fsup | concat | equal | atoi | atof
             | itof | ftoi | stri | strf
             | pushsp | pushfp | pushgp | loadn | storen | swap
             | writei | writef | writes | read | call | return_
