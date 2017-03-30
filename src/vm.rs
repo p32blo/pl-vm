@@ -148,10 +148,8 @@ impl Machine {
         let mut buffer = String::new();
         f.read_to_string(&mut buffer).chain_err(|| "Unable to Read file")?;
 
-        parser::parse(&buffer);
-
         // Parse the file
-        let code = parser::parse(&buffer);
+        let code = parser::parse(&buffer).chain_err(|| "Unable to parse file")?;
 
         println!("{:?}", &code);
 

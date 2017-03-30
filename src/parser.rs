@@ -4,6 +4,8 @@ use pest::prelude::*;
 
 use instructions::Instruction;
 
+use errors::*;
+
 impl_rdp! {
     grammar! {
         // Lexical Rules
@@ -105,21 +107,23 @@ impl_rdp! {
         jz = {["jz"]}
         pusha = {["pusha"]}
 
-        // Grammar Rules
-        code = _{ soi ~ instr* ~ eoi }
+        sp = _{ ( [" "] | ["\t"] ) }
 
-        instr = {
-            ident ~ [":"]
+        // Grammar Rules
+        code = _{ soi ~ instr? ~ (instr)* ~ eoi }
+
+        instr = @{
+            ident ~ sp* ~ [":"]
             | instr_atom
-            | instr_int ~ integer
-            | pushf ~ float
-            | ( pushs | err) ~ string
-            | check ~ integer ~ [","] ~ integer
-            | (jump | jz | pusha) ~ ident
+            | instr_int ~ sp+ ~ integer
+            | pushf ~ sp+ ~ float
+            | ( pushs | err) ~ sp+ ~ string
+            | check ~ sp+ ~ integer ~ sp* ~ [","] ~ sp* ~ integer
+            | (jump | jz | pusha) ~ sp+ ~ ident
         }
         instr_atom = {
-            padd | add | sub | mul | div | mod_ | not | inf | infeq | sup
-            | supeq | fadd | fsub | fmul | fdiv | fcos | fsin
+            padd | add | sub | mul | div | mod_ | not | inf | infeq | supeq
+            | sup | fadd | fsub | fmul | fdiv | fcos | fsin
             | finf | finfeq | fsup | fsupeq | concat | equal | atoi | atof
             | itof | ftoi | stri | strf
             | pushsp | pushfp | pushgp | loadn | storen | swap
@@ -133,7 +137,7 @@ impl_rdp! {
             | dup | pop | storel | storeg | alloc
         }
         comment = _{ ["//"] ~ (!["\n"] ~ any)* ~ ["\n"] }
-        whitespace = _{ [" "] | ["\n"] | ["\r"] | ["\t"] }
+        whitespace = _{ sp | ["\n"] | ["\r"]}
     }
 
     process! {
@@ -205,13 +209,17 @@ impl_rdp! {
     }
 }
 
-pub fn parse(input: &str) -> Vec<Instruction> {
+pub fn parse(input: &str) -> Result<Vec<Instruction>> {
+
     let mut parser = Rdp::new(StringInput::new(input));
+
     parser.code();
-    println!("{:?}",
-             parser.queue_with_captures()
-                 .iter()
-                 .map(|x| &x.1)
-                 .collect::<Vec<_>>());
-    parser.compute()
+
+    if !parser.end() {
+        let (r, pos) = parser.expected();
+        let (line, col) = parser.input().line_col(pos);
+        bail!(format!("line({}), col({:?}) => expected rules: {:?}", line, col, r));
+    }
+
+    Ok(parser.compute())
 }
