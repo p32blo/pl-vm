@@ -321,7 +321,6 @@ impl Machine {
                                                                 errors::print_errors(e);
                                                                 Status::Exit
                                                             });
-            bail!(ErrorKind::IllegalOperand);
         }
     }
 

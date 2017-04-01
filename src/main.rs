@@ -36,7 +36,7 @@ mod errors {
                 display("Illegal Operand")
             }
             SegmentationFault {
-                description("Triggered for access to an illegal area of ​​the code, stack, or one of two heaps")
+                description("Triggered for access to an illegal area of the code, stack, or one of two heaps")
                 display("Segmentation Fault")
             }
             StackOverflow {
