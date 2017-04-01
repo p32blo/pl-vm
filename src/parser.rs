@@ -19,93 +19,93 @@ impl_rdp! {
         string = @{ ["\""] ~ inner_string ~ ["\""] }
         inner_string = { (["\\\""]|!["\""] ~ any)* }
 
-        padd = {["padd"]}
-        add = {["add"]}
-        sub = {["sub"]}
-        mul = {["mul"]}
-        div = {["div"]}
-        mod_ = {["mod"]}
-        not = {["not"]}
-        inf = {["inf"]}
-        infeq = {["infeq"]}
-        sup = {["sup"]}
+        padd = {[i"padd"]}
+        add = {[i"add"]}
+        sub = {[i"sub"]}
+        mul = {[i"mul"]}
+        div = {[i"div"]}
+        mod_ = {[i"mod"]}
+        not = {[i"not"]}
+        inf = {[i"inf"]}
+        infeq = {[i"infeq"]}
+        sup = {[i"sup"]}
 
-        supeq = {["supeq"]}
-        fadd = {["fadd"]}
-        fsub = {["fsub"]}
-        fmul = {["fmul"]}
-        fdiv = {["fdiv"]}
-        fcos = {["fcos"]}
-        fsin = {["fsin"]}
+        supeq = {[i"supeq"]}
+        fadd = {[i"fadd"]}
+        fsub = {[i"fsub"]}
+        fmul = {[i"fmul"]}
+        fdiv = {[i"fdiv"]}
+        fcos = {[i"fcos"]}
+        fsin = {[i"fsin"]}
 
-        finf = {["finf"]}
-        finfeq = {["finfeq"]}
-        fsup = {["fsup"]}
-        fsupeq = {["fsupeq"]}
-        concat = {["concat"]}
-        equal = {["equal"]}
-        atoi = {["atoi"]}
-        atof = {["atof"]}
+        finf = {[i"finf"]}
+        finfeq = {[i"finfeq"]}
+        fsup = {[i"fsup"]}
+        fsupeq = {[i"fsupeq"]}
+        concat = {[i"concat"]}
+        equal = {[i"equal"]}
+        atoi = {[i"atoi"]}
+        atof = {[i"atof"]}
 
-        itof = {["itof"]}
-        ftoi = {["ftoi"]}
-        stri = {["stri"]}
-        strf = {["strf"]}
+        itof = {[i"itof"]}
+        ftoi = {[i"ftoi"]}
+        stri = {[i"stri"]}
+        strf = {[i"strf"]}
 
-        pushsp = {["pushsp"]}
-        pushfp = {["pushfp"]}
-        pushgp = {["pushgp"]}
-        loadn = {["loadn"]}
-        storen = {["storen"]}
-        swap = {["swap"]}
+        pushsp = {[i"pushsp"]}
+        pushfp = {[i"pushfp"]}
+        pushgp = {[i"pushgp"]}
+        loadn = {[i"loadn"]}
+        storen = {[i"storen"]}
+        swap = {[i"swap"]}
 
-        writei = {["writei"]}
-        writef = {["writef"]}
-        writes = {["writes"]}
-        read = {["read"]}
-        call = {["call"]}
-        return_ = {["return"]}
+        writei = {[i"writei"]}
+        writef = {[i"writef"]}
+        writes = {[i"writes"]}
+        read = {[i"read"]}
+        call = {[i"call"]}
+        return_ = {[i"return"]}
 
-        drawpoint = {["drawpoint"]}
-        drawline = {["drawline"]}
-        drawcircle = {["drawcircle"]}
+        drawpoint = {[i"drawpoint"]}
+        drawline = {[i"drawline"]}
+        drawcircle = {[i"drawcircle"]}
 
-        cleardrawingarea = {["cleardrawingarea"]}
-        opendrawingarea = {["opendrawingarea"]}
-        setcolor = {["setcolor"]}
-        refresh = {["refresh"]}
+        cleardrawingarea = {[i"cleardrawingarea"]}
+        opendrawingarea = {[i"opendrawingarea"]}
+        setcolor = {[i"setcolor"]}
+        refresh = {[i"refresh"]}
 
-        start = {["start"]}
-        nop = {["nop"]}
-        stop = {["stop"]}
-        allocn = {["allocn"]}
-        free = {["free"]}
-        dupn = {["dupn"]}
-        popn = {["popn"]}
+        start = {[i"start"]}
+        nop = {[i"nop"]}
+        stop = {[i"stop"]}
+        allocn = {[i"allocn"]}
+        free = {[i"free"]}
+        dupn = {[i"dupn"]}
+        popn = {[i"popn"]}
 
 
-        pushi = {["pushi"]}
-        pushn = {["pushn"]}
-        pushg = {["pushg"]}
-        pushl = {["pushl"]}
-        load = {["load"]}
+        pushi = {[i"pushi"]}
+        pushn = {[i"pushn"]}
+        pushg = {[i"pushg"]}
+        pushl = {[i"pushl"]}
+        load = {[i"load"]}
 
-        dup = {["dup"]}
-        pop = {["pop"]}
-        storel = {["storel"]}
-        storeg = {["storeg"]}
-        alloc = {["alloc"]}
+        dup = {[i"dup"]}
+        pop = {[i"pop"]}
+        storel = {[i"storel"]}
+        storeg = {[i"storeg"]}
+        alloc = {[i"alloc"]}
 
-        pushf = {["pushf"]}
+        pushf = {[i"pushf"]}
 
-        pushs = {["pushs"]}
-        err = {["err"]}
+        pushs = {[i"pushs"]}
+        err = {[i"err"]}
 
-        check = {["check"]}
+        check = {[i"check"]}
 
-        jump = {["jump"]}
-        jz = {["jz"]}
-        pusha = {["pusha"]}
+        jump = {[i"jump"]}
+        jz = {[i"jz"]}
+        pusha = {[i"pusha"]}
 
         sp = _{ ( [" "] | ["\t"] ) }
 
