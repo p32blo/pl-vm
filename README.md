@@ -27,7 +27,7 @@ To just launch the VM and run the instruction in a file use:
 
 To initiate the VM in the integrated interactive debug use:
 
-	$ pl.vm -d <file>
+	$ pl-vm -d <file>
 
 In order to see all available debug commands and their description you can use the `help` command:
 
@@ -293,7 +293,7 @@ Every program follows the following syntax:
 	          | check <integer> , <integer>
 	          | (jump | jz | pusha) <ident>
 			  
-	<instr_atom> ::= add | sub | mul | div | mod | not | inf | infeq | sup
+	<instr_atom> ::= padd | add | sub | mul | div | mod | not | inf | infeq | sup
 	               | supeq | fadd | fsub | fmul | fdiv | fcos | fsin
 	               | finf | finfeq | fsup | fsupeq | concat | equal | atoi | atof
 	               | itof | ftoi | stri | strf
