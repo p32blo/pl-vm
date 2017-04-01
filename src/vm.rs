@@ -387,8 +387,8 @@ impl Machine {
         self.push_reg(gp);
     }
 
-    fn pushg(&mut self, val: i32) {
-        let addr = self.gp + val as usize;
+    fn pushg(&mut self, val: usize) {
+        let addr = self.gp + val;
         let value = self.stack[addr];
 
         self.stack.push(value);
@@ -466,9 +466,9 @@ impl Machine {
         }
     }
 
-    fn storeg(&mut self, n: i32) {
+    fn storeg(&mut self, n: usize) {
         let val = self.stack_pop();
-        self.stack[self.gp + n as usize] = val;
+        self.stack[self.gp + n] = val;
     }
 
     fn storen(&mut self) {

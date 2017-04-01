@@ -161,15 +161,15 @@ impl_rdp! {
             (_:jz, &id:ident) => Instruction::Jz(id.to_string()),
             (_:pusha, &id:ident) => Instruction::Pusha(id.to_string()),
 
-            (_: instr_atom) => self.atom(),
-            (_: instr_int, res: int(), &i: integer) => res(i.parse().unwrap()),
+            (_: instr_atom, res: atom()) => res,
+            (_: instr_int, res: int()) => res,
         }
 
-        int(&self) -> fn(i32) -> Instruction {
-            (_: pushi) => Instruction::Pushi,
-            (_: pushn) => Instruction::Pushn,
-            (_: pushg) => Instruction::Pushg,
-            (_: storeg) => Instruction::Storeg,
+        int(&self) -> Instruction {
+            (_: pushg, &i: integer) => Instruction::Pushg(i.parse().unwrap()),
+            (_: storeg, &i: integer) => Instruction::Storeg(i.parse().unwrap()),
+            (_: pushi, &i: integer) => Instruction::Pushi(i.parse().unwrap()),
+            (_: pushn, &i: integer) => Instruction::Pushn(i.parse().unwrap()),
         }
 
         atom(&self) -> Instruction {
