@@ -151,8 +151,6 @@ impl Machine {
         // Parse the file
         let code = parser::parse(&buffer).chain_err(|| "Unable to parse file")?;
 
-        println!("{:?}", &code);
-
         // clear code on a new load
         self.labels.clear();
         self.code.clear();

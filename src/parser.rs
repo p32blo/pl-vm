@@ -141,65 +141,73 @@ impl_rdp! {
     }
 
     process! {
-        compute(&self) -> Vec<Instruction> {
-            (_: instr, head: instruction(), mut tail: compute()) => {
-                tail.insert(0, head);
-                tail    
+
+        compute(&self) -> Result<Vec<Instruction>> {
+            (a: instr, head: instruction(), tail: compute()) => {
+                let mut t = tail?;
+                let h = head.chain_err(|| {
+                    let i = self.input();
+                    let (line, col) = i.line_col(a.start);
+                    format!("Instruction '{}' at line({}), col({:?})", i.slice(a.start, a.end), line, col)
+                })?;
+                t.insert(0, h);
+                Ok(t)
             },
             () => {
-                Vec::new()
+                Ok(Vec::new())
             }
         }
 
-        instruction(&self) -> Instruction {
-            (&id: ident) => Instruction::Label(id.to_string()),
+        instruction(&self) -> Result<Instruction> {
+            (&id: ident) => Ok(Instruction::Label(id.to_string())),
 
-            (_: pushs, _: string, &s: inner_string) => Instruction::Pushs(s.to_string()),
-            (_: err, _: string, &s: inner_string) => Instruction::Err(s.to_string()),
+            (_: pushs, _: string, &s: inner_string) => Ok(Instruction::Pushs(s.to_string())),
+            (_: err, _: string, &s: inner_string) => Ok(Instruction::Err(s.to_string())),
 
-            (_:jump, &id:ident) => Instruction::Jump(id.to_string()),
-            (_:jz, &id:ident) => Instruction::Jz(id.to_string()),
-            (_:pusha, &id:ident) => Instruction::Pusha(id.to_string()),
+            (_:jump, &id: ident) => Ok(Instruction::Jump(id.to_string())),
+            (_:jz, &id: ident) => Ok(Instruction::Jz(id.to_string())),
+            (_:pusha, &id: ident) => Ok(Instruction::Pusha(id.to_string())),
 
             (_: instr_atom, res: atom()) => res,
             (_: instr_int, res: int()) => res,
+            () => Err("Failed to parse Instruction".into())
         }
 
-        int(&self) -> Instruction {
-            (_: pushg, &i: integer) => Instruction::Pushg(i.parse().unwrap()),
-            (_: storeg, &i: integer) => Instruction::Storeg(i.parse().unwrap()),
-            (_: pushi, &i: integer) => Instruction::Pushi(i.parse().unwrap()),
-            (_: pushn, &i: integer) => Instruction::Pushn(i.parse().unwrap()),
+        int(&self) -> Result<Instruction> {
+            (_: pushg, &i: integer) => Ok(Instruction::Pushg(i.parse().chain_err(|| "value is not a positive integer")?)),
+            (_: storeg, &i: integer) => Ok(Instruction::Storeg(i.parse().chain_err(|| "value is not a positive integer")?)),
+            (_: pushi, &i: integer) => Ok(Instruction::Pushi(i.parse().chain_err(|| "value is not a integer")?)),
+            (_: pushn, &i: integer) => Ok(Instruction::Pushn(i.parse().chain_err(|| "value is not a integer")?)),
         }
 
-        atom(&self) -> Instruction {
-            (_: padd) => Instruction::Padd,
-            (_: add) => Instruction::Add,
-            (_: mul) => Instruction::Mul,
-            (_: div) => Instruction::Div,
-            (_: mod_) => Instruction::Mod,
-            (_: inf) => Instruction::Inf,
-            (_: infeq) => Instruction::Infeq,
-            (_: sup) => Instruction::Sup,
+        atom(&self) -> Result<Instruction> {
+            (_: padd) => Ok(Instruction::Padd),
+            (_: add) => Ok(Instruction::Add),
+            (_: mul) => Ok(Instruction::Mul),
+            (_: div) => Ok(Instruction::Div),
+            (_: mod_) => Ok(Instruction::Mod),
+            (_: inf) => Ok(Instruction::Inf),
+            (_: infeq) => Ok(Instruction::Infeq),
+            (_: sup) => Ok(Instruction::Sup),
 
-            (_: supeq) => Instruction::Supeq,
-            
-            (_: equal) => Instruction::Equal,
-            (_: atoi) => Instruction::Atoi,
-           
-            (_: pushgp) => Instruction::Pushgp,
-            (_: loadn) => Instruction::Loadn,
-            (_: storen) => Instruction::Storen,
-           
-            (_: writei) => Instruction::Writei,
-            (_: writes) => Instruction::Writes,
-            (_: read) => Instruction::Read,
-            (_: call) => Instruction::Call,
-            (_: return_) => Instruction::Return,
+            (_: supeq) => Ok(Instruction::Supeq),
 
-            (_: start) => Instruction::Start,
-            (_: nop) => Instruction::Nop,
-            (_: stop) => Instruction::Stop,
+            (_: equal) => Ok(Instruction::Equal),
+            (_: atoi) => Ok(Instruction::Atoi),
+
+            (_: pushgp) => Ok(Instruction::Pushgp),
+            (_: loadn) => Ok(Instruction::Loadn),
+            (_: storen) => Ok(Instruction::Storen),
+
+            (_: writei) => Ok(Instruction::Writei),
+            (_: writes) => Ok(Instruction::Writes),
+            (_: read) => Ok(Instruction::Read),
+            (_: call) => Ok(Instruction::Call),
+            (_: return_) => Ok(Instruction::Return),
+
+            (_: start) => Ok(Instruction::Start),
+            (_: nop) => Ok(Instruction::Nop),
+            (_: stop) => Ok(Instruction::Stop),
         }
     }
 }
@@ -216,5 +224,5 @@ pub fn parse(input: &str) -> Result<Vec<Instruction>> {
         bail!(format!("line({}), col({:?}) => expected rules: {:?}", line, col, r));
     }
 
-    Ok(parser.compute())
+    parser.compute()
 }
