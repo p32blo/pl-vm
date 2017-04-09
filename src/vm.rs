@@ -471,7 +471,7 @@ impl Machine {
                 print!("{}", self.strings[addr]);
                 io::stdout()
                     .flush()
-                    .chain_err(|| "Could not flush stdout")?;
+                    .chain_err(|| ErrorKind::Anomaly("Could not flush stdout".to_string()))?;
             }
             _ => {
                 bail!(ErrorKind::IllegalOperand("writes: Must be address to write string"
@@ -485,7 +485,7 @@ impl Machine {
         let mut input = String::new();
         io::stdin()
             .read_line(&mut input)
-            .chain_err(|| "Failed to read line from stdin")?;
+            .chain_err(|| ErrorKind::Anomaly("Failed to read line from stdin".to_string()))?;
         self.strings.push(input.trim().to_string());
         self.stack.push(Operand::Address(self.strings.len() - 1));
         Ok(())
@@ -613,7 +613,9 @@ impl Machine {
 pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     let mut m = Machine::new();
     m.load(&path)
-        .chain_err(|| format!("Cannot load file '{}'", path.as_ref().display()))?;
+        .chain_err(|| {
+                       ErrorKind::Anomaly(format!("Cannot load file '{}'", path.as_ref().display()))
+                   })?;
     // println!("{:#?}", m);
     match mode {
         Mode::Running => m.run()?,

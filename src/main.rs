@@ -15,7 +15,6 @@
 
 #[macro_use]
 extern crate error_chain;
-extern crate ansi_term;
 extern crate clap;
 
 mod vm;
@@ -27,8 +26,6 @@ use clap::{App, Arg};
 
 /// Error handling
 mod errors {
-    use ansi_term::Colour::Red;
-
     error_chain!{
         errors {
             /// Triggered when the value(s) on the stack are not of the expected nature
@@ -36,7 +33,7 @@ mod errors {
                 display("Illegal Operand: {}", s)
             }
             /// Triggered for access to an illegal area of the code, stack, or one of two heaps
-            SegmentationFault (s: String){
+            SegmentationFault (s: String) {
                 display("Segmentation Fault: {}", s)
             }
             /// Triggered for any attempt to add to the top of a full stack (execution stack or call stack)
@@ -49,7 +46,7 @@ mod errors {
             }
             /// Triggered when the err statement is executed
             Error(message: String) {
-                display("{}", Red.paint(message.clone()))
+                display("{}", message.clone())
             }
             /// This error must never occur. If so please report it!
             Anomaly (s: String) {
@@ -69,9 +66,9 @@ mod errors {
 
     /// Print a multiline error chain
     pub fn print_errors(e: &Error) {
-        println!("\n{}", Red.paint(e.to_string() + ":"));
+        println!("\n{}", e.to_string());
         for e in e.iter().skip(1) {
-            println!("{}{}", Red.paint("caused by: "), e);
+            println!("{}{}", "caused by: ", e);
         }
     }
 }
