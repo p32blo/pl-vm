@@ -200,13 +200,13 @@ impl Machine {
     fn stack_pop(&mut self) -> Result<Operand> {
         self.stack
             .pop()
-            .ok_or(ErrorKind::SegmentationFault("Stack is empty".to_string()).into())
+            .ok_or_else(|| ErrorKind::SegmentationFault("Stack is empty".to_string()).into())
     }
 
     fn call_stack_pop(&mut self) -> Result<(usize, usize)> {
         self.call_stack
             .pop()
-            .ok_or(ErrorKind::SegmentationFault("Call stack is empty".to_string()).into())
+            .ok_or_else(|| ErrorKind::SegmentationFault("Call stack is empty".to_string()).into())
     }
 
     fn readline(&self) -> Result<Command> {
@@ -425,7 +425,7 @@ impl Machine {
     }
 
     fn pushs(&mut self, val: &str) {
-        if let Some(i) = self.strings.iter().position(|x| x == &val) {
+        if let Some(i) = self.strings.iter().position(|x| x == val) {
             self.stack.push(Operand::Address(i));
         } else {
             self.strings.push(val.to_string());
