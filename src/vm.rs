@@ -144,12 +144,14 @@ impl Machine {
 
     fn load<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
         // Open file
-        let mut f = File::open(path).chain_err(|| "Failed to open file")?;
+        let mut f =
+            File::open(&path)
+                .chain_err(|| format!("Failed to open file '{}'", path.as_ref().display()))?;
 
         // Load file to memory
         let mut buffer = String::new();
         f.read_to_string(&mut buffer)
-            .chain_err(|| "Unable to Read file")?;
+            .chain_err(|| format!("Unable to Read file '{}'", path.as_ref().display()))?;
 
         // Strip comments and remove empty lines
         let code_labels: Vec<String> = buffer
@@ -177,7 +179,7 @@ impl Machine {
                 .filter(|line| Self::is_label(line).is_none()) {
             self.code.push(
                 instr.parse().chain_err(|| {
-                    ErrorKind::Anomaly(format!("Failed to parse '{}' instruction", instr))
+                    ErrorKind::Anomaly(format!("Failed to parse '{}' => file '{}'", instr, path.as_ref().display()))
                 })?
             );
         }
@@ -614,8 +616,7 @@ impl Machine {
 /// `vm` entry point
 pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     let mut m = Machine::new();
-    m.load(&path)
-        .chain_err(|| format!("Cannot load file '{}'", path.as_ref().display()))?;
+    m.load(&path)?;
     // println!("{:#?}", m);
     match mode {
         Mode::Running => m.run()?,
