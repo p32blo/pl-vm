@@ -361,7 +361,7 @@ impl Machine {
             Instruction::Loadn => self.loadn()?,
             Instruction::Writei => self.writei()?,
             Instruction::Writes => self.writes()?,
-            Instruction::Read => self.read()?,
+            Instruction::Read => self.read(),
             Instruction::Atoi => self.atoi()?,
             Instruction::Padd => self.padd()?,
             Instruction::Add => self.add()?,
@@ -469,9 +469,7 @@ impl Machine {
         match self.stack_pop()? {
             Operand::Address(addr) => {
                 print!("{}", self.strings[addr]);
-                io::stdout()
-                    .flush()
-                    .chain_err(|| ErrorKind::Anomaly("Could not flush stdout".to_string()))?;
+                io::stdout().flush().expect("Could not flush stdout");
             }
             _ => {
                 bail!(ErrorKind::IllegalOperand("writes: Must be address to write string"
@@ -481,20 +479,24 @@ impl Machine {
         Ok(())
     }
 
-    fn read(&mut self) -> Result<()> {
+    fn read(&mut self) -> () {
         let mut input = String::new();
+
         io::stdin()
             .read_line(&mut input)
-            .chain_err(|| ErrorKind::Anomaly("Failed to read line from stdin".to_string()))?;
+            .expect("Failed to read line from stdin");
+
         self.strings.push(input.trim().to_string());
         self.stack.push(Operand::Address(self.strings.len() - 1));
-        Ok(())
     }
 
     fn atoi(&mut self) -> Result<()> {
         let adr = match self.stack_pop()? {
             Operand::Address(addr) => self.strings.remove(addr),
-            _ => bail!("atoi: Must be address to write string"),
+            _ => {
+                bail!(ErrorKind::IllegalOperand("atoi => Must be an address to write string"
+                                                    .to_string()))
+            }
         };
 
         match adr.parse() {
@@ -613,9 +615,7 @@ impl Machine {
 pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     let mut m = Machine::new();
     m.load(&path)
-        .chain_err(|| {
-                       ErrorKind::Anomaly(format!("Cannot load file '{}'", path.as_ref().display()))
-                   })?;
+        .chain_err(|| format!("Cannot load file '{}'", path.as_ref().display()))?;
     // println!("{:#?}", m);
     match mode {
         Mode::Running => m.run()?,
