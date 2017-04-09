@@ -48,14 +48,15 @@ impl Operand {
                 Ok(Operand::Address((a as i32 + n) as usize))
             }
             (Operand::Integer(n), Operand::Integer(a)) => Ok(Operand::Integer(n + a)),
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand(format!("Operand::add => {} + {}", n, a))),
+
         }
     }
 
     fn mul(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
-            (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(n * m)),
-            _ => bail!(ErrorKind::IllegalOperand),
+            (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(m * n)),
+            _ => bail!(ErrorKind::IllegalOperand(format!("Operand::mul => {} * {}", m, n))),
         }
     }
 
@@ -63,14 +64,14 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(0), _) => bail!(ErrorKind::DivisionByZero),
             (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(m / n)),
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand(format!("Operand::div => {} / {}", m, n))),
         }
     }
 
     fn module(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(m % n)),
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand(format!("Operand::mod => {} % {}", m, n))),
         }
     }
 
@@ -78,7 +79,7 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if n == m => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand(format!("Operand::equal => {} == {}", m, n))),
         }
     }
 
@@ -86,7 +87,7 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m < n => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand(format!("Operand::inf => {} < {}", m, n))),
         }
     }
 
@@ -94,7 +95,7 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m <= n => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand(format!("Operand::infeq => {} <= {}", m, n))),
         }
     }
 
@@ -102,7 +103,7 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m > n => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand(format!("Operand::sup => {} > {}", m, n))),
         }
     }
 
@@ -110,7 +111,7 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m >= n => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand(format!("Operand::supeq => {} >= {}", m, n))),
         }
     }
 }
@@ -147,10 +148,12 @@ impl Machine {
 
         // Load file to memory
         let mut buffer = String::new();
-        f.read_to_string(&mut buffer).chain_err(|| "Unable to Read file")?;
+        f.read_to_string(&mut buffer)
+            .chain_err(|| "Unable to Read file")?;
 
         // Strip comments and remove empty lines
-        let code_labels: Vec<String> = buffer.lines()
+        let code_labels: Vec<String> = buffer
+            .lines()
             .map(|x| Self::strip_comments(&x.trim().to_lowercase()))
             .filter(|x| !x.is_empty())
             .collect();
@@ -169,11 +172,14 @@ impl Machine {
 
         self.code.clear();
         // remove labels from code
-        for instr in code_labels.iter().filter(|line| Self::is_label(line).is_none()) {
-            self.code.push(instr.parse()
-                               .chain_err(|| {
-                                              format!("Failed to parse '{}' instruction", instr)
-                                          })?);
+        for instr in code_labels
+                .iter()
+                .filter(|line| Self::is_label(line).is_none()) {
+            self.code.push(
+                instr.parse().chain_err(|| {
+                    ErrorKind::Anomaly(format!("Failed to parse '{}' instruction", instr))
+                })?
+            );
         }
         Ok(())
     }
@@ -192,16 +198,22 @@ impl Machine {
     }
 
     fn stack_pop(&mut self) -> Result<Operand> {
-        self.stack.pop().ok_or(ErrorKind::SegmentationFault.into())
+        self.stack
+            .pop()
+            .ok_or(ErrorKind::SegmentationFault("Stack is empty".to_string()).into())
     }
 
     fn call_stack_pop(&mut self) -> Result<(usize, usize)> {
-        self.call_stack.pop().ok_or(ErrorKind::SegmentationFault.into())
+        self.call_stack
+            .pop()
+            .ok_or(ErrorKind::SegmentationFault("Call stack is empty".to_string()).into())
     }
 
     fn readline(&self) -> Result<Command> {
         let mut buf = String::new();
-        io::stdin().read_line(&mut buf).chain_err(|| "Error reading line")?;
+        io::stdin()
+            .read_line(&mut buf)
+            .chain_err(|| "Error reading line")?;
         buf.parse()
     }
 
@@ -241,10 +253,7 @@ impl Machine {
                 }
                 println!();
 
-                for (i, val) in self.stack
-                        .iter()
-                        .enumerate()
-                        .rev() {
+                for (i, val) in self.stack.iter().enumerate().rev() {
                     print!("{}", val);
                     if self.fp == i {
                         print!(" <- fp");
@@ -313,14 +322,16 @@ impl Machine {
             }
             io::stdout().flush().expect("Could not flush stdout");
 
-            let cmd = self.readline().unwrap_or_else(|ref e| {
-                                                         errors::print_errs(e);
-                                                         Command::Empty
-                                                     });
-            status = self.debug(cmd, status).unwrap_or_else(|ref e| {
-                                                                errors::print_errors(e);
-                                                                Status::Exit
-                                                            });
+            let cmd = self.readline()
+                .unwrap_or_else(|ref e| {
+                                    errors::print_errs(e);
+                                    Command::Empty
+                                });
+            status = self.debug(cmd, status)
+                .unwrap_or_else(|ref e| {
+                                    errors::print_errors(e);
+                                    Status::Exit
+                                });
         }
     }
 
@@ -449,7 +460,7 @@ impl Machine {
             print!("{}", i);
             io::stdout().flush().expect("Could not flush stdout");
         } else {
-            bail!(ErrorKind::IllegalOperand);
+            bail!(ErrorKind::IllegalOperand("writei: Not an Integer".to_string()));
         }
         Ok(())
     }
@@ -458,16 +469,23 @@ impl Machine {
         match self.stack_pop()? {
             Operand::Address(addr) => {
                 print!("{}", self.strings[addr]);
-                io::stdout().flush().expect("Could not flush stdout");
+                io::stdout()
+                    .flush()
+                    .chain_err(|| "Could not flush stdout")?;
             }
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => {
+                bail!(ErrorKind::IllegalOperand("writes: Must be address to write string"
+                                                    .to_string()))
+            }
         }
         Ok(())
     }
 
     fn read(&mut self) -> Result<()> {
         let mut input = String::new();
-        io::stdin().read_line(&mut input).chain_err(|| "Failed to read line from stdin")?;
+        io::stdin()
+            .read_line(&mut input)
+            .chain_err(|| "Failed to read line from stdin")?;
         self.strings.push(input.trim().to_string());
         self.stack.push(Operand::Address(self.strings.len() - 1));
         Ok(())
@@ -481,7 +499,7 @@ impl Machine {
 
         match adr.parse() {
             Ok(val) => Ok(self.pushi(val)),
-            Err(_) => bail!(ErrorKind::IllegalOperand),
+            Err(_) => bail!(ErrorKind::IllegalOperand("Value is not a valid Integer".to_string())),
         }
     }
 
@@ -511,7 +529,7 @@ impl Machine {
                 self.fp = self.sp();
                 self.pc = addr;
             }
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand("call => Not an Address".to_string())),
         }
         Ok(())
     }
@@ -585,7 +603,7 @@ impl Machine {
         match eq {
             Operand::Integer(0) => self.jump(val),
             Operand::Integer(1) => {}
-            _ => bail!(ErrorKind::IllegalOperand),
+            _ => bail!(ErrorKind::IllegalOperand("jz => Not an Integer(0|1)".to_string())),
         }
         Ok(())
     }
@@ -594,7 +612,8 @@ impl Machine {
 /// `vm` entry point
 pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     let mut m = Machine::new();
-    m.load(&path).chain_err(|| format!("Cannot load file '{}'", path.as_ref().display()))?;
+    m.load(&path)
+        .chain_err(|| format!("Cannot load file '{}'", path.as_ref().display()))?;
     // println!("{:#?}", m);
     match mode {
         Mode::Running => m.run()?,

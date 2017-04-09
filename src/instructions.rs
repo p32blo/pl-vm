@@ -90,7 +90,7 @@ impl FromStr for Instruction {
             "jump" => Instruction::Jump(val_s(val)?),
             "jz" => Instruction::Jz(val_s(val)?),
             "err" => Instruction::Err(val_s(val).and_then(|x| Self::remove_quotes(&x))?),
-            _ => bail!(ErrorKind::Anomaly),
+            _ => bail!(ErrorKind::Anomaly(format!("Instruction not found: {}", inst))),
         };
         Ok(res)
     }

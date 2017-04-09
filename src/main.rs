@@ -31,29 +31,29 @@ mod errors {
 
     error_chain!{
         errors {
-            IllegalOperand {
-                description("Triggered when the value(s) on the stack are not of the expected nature")
-                display("Illegal Operand")
+            /// Triggered when the value(s) on the stack are not of the expected nature
+            IllegalOperand (s: String) {
+                display("Illegal Operand: {}", s)
             }
-            SegmentationFault {
-                description("Triggered for access to an illegal area of the code, stack, or one of two heaps")
-                display("Segmentation Fault")
+            /// Triggered for access to an illegal area of the code, stack, or one of two heaps
+            SegmentationFault (s: String){
+                display("Segmentation Fault: {}", s)
             }
+            /// Triggered for any attempt to add to the top of a full stack (execution stack or call stack)
             StackOverflow {
-                description("Triggered for any attempt to add to the top of a full stack (execution stack or call stack)")
                 display("Stack Overflow")
             }
+            /// Triggered in case of division (integer) by zero
             DivisionByZero {
-                description("Triggered in case of division (integer) by zero")
                 display("Division By Zero")
             }
+            /// Triggered when the err statement is executed
             Error(message: String) {
-                description("Triggered when the err statement is executed")
                 display("{}", Red.paint(message.clone()))
             }
-            Anomaly {
-                description("This error must never occur. If so please report it!")
-                display("Anomaly")
+            /// This error must never occur. If so please report it!
+            Anomaly (s: String) {
+                display("Anomaly: {}", s)
             }
         }
     }
