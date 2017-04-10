@@ -66,15 +66,15 @@ impl FromStr for Command {
                 "r" | "run" => Ok(Command::Run),
                 "n" | "next" => {
                     Ok(Command::Next(args.next()
-                        .unwrap_or("1")
-                        .parse()
-                        .chain_err(|| "Not a valid argument")?))
+                                         .unwrap_or("1")
+                                         .parse()
+                                         .chain_err(|| "Not a valid argument")?))
                 }
                 "s" | "step" => {
                     Ok(Command::Step(args.next()
-                        .unwrap_or("1")
-                        .parse()
-                        .chain_err(|| "Not a valid argument")?))
+                                         .unwrap_or("1")
+                                         .parse()
+                                         .chain_err(|| "Not a valid argument")?))
                 }
                 _ => Err("Command not Found. Try 'help' to find valid commands".into()),
             };

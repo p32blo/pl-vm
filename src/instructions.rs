@@ -74,7 +74,7 @@ impl FromStr for Instruction {
             "writei" => Instruction::Writei,
             "writes" => Instruction::Writes,
             "read" => Instruction::Read,
-            "atoi" => Instruction::Atoi, 
+            "atoi" => Instruction::Atoi,
             "padd" => Instruction::Padd,
             "add" => Instruction::Add,
             "mul" => Instruction::Mul,
@@ -90,7 +90,7 @@ impl FromStr for Instruction {
             "jump" => Instruction::Jump(val_s(val)?),
             "jz" => Instruction::Jz(val_s(val)?),
             "err" => Instruction::Err(val_s(val).and_then(|x| Self::remove_quotes(&x))?),
-            _ => panic!(format!("Instruction not found: {}", inst)),
+            _ => bail!(format!("Instruction not found '{}'", inst)),
         };
         Ok(res)
     }
