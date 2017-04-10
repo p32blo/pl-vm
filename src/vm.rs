@@ -177,11 +177,16 @@ impl Machine {
         for instr in code_labels
                 .iter()
                 .filter(|line| Self::is_label(line).is_none()) {
-            self.code.push(
-                instr.parse().chain_err(|| {
-                    ErrorKind::Anomaly(format!("Failed to parse '{}' => file '{}'", instr, path.as_ref().display()))
-                })?
-            );
+
+
+            self.code
+                .push(instr
+                          .parse()
+                          .chain_err(|| {
+                                         ErrorKind::Anomaly(format!("'{}' -> Failed to parse '{}'",
+                                                                    path.as_ref().display(),
+                                                                    instr))
+                                     })?);
         }
         Ok(())
     }
