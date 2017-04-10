@@ -155,9 +155,11 @@ impl Machine {
             .chain_err(|| format!("Unable to Read file '{}'", path.as_ref().display()))?;
 
         // Parse the file
-        let code =
-            parser::parse(&buffer)
-                .chain_err(|| format!("Unable to Parse file '{}'", path.as_ref().display()))?;
+        let code = parser::parse(&buffer)
+            .chain_err(|| {
+                           ErrorKind::Anomaly(format!("Unable to Parse file '{}'",
+                                                      path.as_ref().display()))
+                       })?;
 
         // clear code on a new load
         self.labels.clear();

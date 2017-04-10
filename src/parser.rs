@@ -221,7 +221,7 @@ pub fn parse(input: &str) -> Result<Vec<Instruction>> {
     if !parser.end() {
         let (r, pos) = parser.expected();
         let (line, col) = parser.input().line_col(pos);
-        bail!(format!("line({}), col({:?}) => expected rules: {:?}", line, col, r));
+        bail!("line({}), col({:?}) => expected rules: {:?}", line, col, r);
     }
 
     parser.compute()
