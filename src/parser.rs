@@ -136,8 +136,8 @@ impl_rdp! {
             pushi | pushn | pushg | pushl | load
             | dup | pop | storel | storeg | alloc
         }
-        comment = _{ ["//"] ~ (!["\n"] ~ any)* ~ ["\n"] }
-        whitespace = _{ sp | ["\n"] | ["\r"]}
+        comment = _{ ["//"] ~ (!["\n"] ~ any)* ~ (["\n"] | eoi) }
+        whitespace = _{ sp | ["\n"] | ["\r"] }
     }
 
     process! {
