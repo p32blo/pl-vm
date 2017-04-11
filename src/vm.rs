@@ -155,29 +155,14 @@ impl Machine {
             .chain_err(|| format!("Unable to Read file '{}'", path.as_ref().display()))?;
 
         // Parse the file
-        let code = parser::parse(&buffer)
+        let (code, labels) = parser::parse(&buffer)
             .chain_err(|| {
                            ErrorKind::Anomaly(format!("Unable to Parse file '{}'",
                                                       path.as_ref().display()))
                        })?;
 
-        // clear code on a new load
-        self.labels.clear();
-        self.code.clear();
-
-        // inserted labels so far
-        let mut acc = 0;
-
-        // insert labels with the correct pointer
-        for (i, instr) in code.iter().enumerate() {
-            if let Instruction::Label(ref val) = *instr {
-                self.labels.insert(val.clone(), i - acc);
-                acc += 1;
-            }
-        }
-
-        // remove labels from code
-        self.code = code.into_iter().filter(|x| !x.is_label()).collect();
+        self.code = code;
+        self.labels = labels;
 
         Ok(())
     }
@@ -345,8 +330,7 @@ impl Machine {
             Instruction::Call => self.call()?,
             Instruction::Return => self.ret()?,
             Instruction::Start => self.start(),
-            Instruction::Nop |
-            Instruction::Label(..) => {}
+            Instruction::Nop => {}
             Instruction::Stop => return Ok(Status::Exit),
             Instruction::Loadn => self.loadn()?,
             Instruction::Writei => self.writei()?,

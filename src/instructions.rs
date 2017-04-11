@@ -36,7 +36,6 @@ pub enum Instruction {
     Infeq,
     Sup,
     Supeq,
-    Label(String),
     Jump(String),
     Jz(String),
     Err(String),
@@ -73,7 +72,6 @@ impl fmt::Display for Instruction {
             Instruction::Infeq => write!(f, "infeq"),
             Instruction::Sup => write!(f, "sup"),
             Instruction::Supeq => write!(f, "supeq"),
-            Instruction::Label(ref val) => write!(f, "{}:", val),
             Instruction::Jump(ref val) => write!(f, "jump {}", val),
             Instruction::Jz(ref val) => write!(f, "jz {}", val),
             Instruction::Err(ref val) => write!(f, "err {}", val),
@@ -86,13 +84,6 @@ impl Instruction {
         match *self {
             Instruction::Writei | Instruction::Writes => println!(),
             _ => {}
-        }
-    }
-
-    pub fn is_label(&self) -> bool {
-        match *self {
-            Instruction::Label(..) => true,
-            _ => false,
         }
     }
 }
