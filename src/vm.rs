@@ -346,10 +346,7 @@ impl Machine {
             Instruction::Return => self.ret()?,
             Instruction::Start => self.start(),
             Instruction::Nop |
-            Instruction::Label(..)
-            //Instruction::Pushf(..) |
-            // Instruction::Check(..)
-            => {}
+            Instruction::Label(..) => {}
             Instruction::Stop => return Ok(Status::Exit),
             Instruction::Loadn => self.loadn()?,
             Instruction::Writei => self.writei()?,
@@ -417,7 +414,6 @@ impl Machine {
     }
 
     fn pusha(&mut self, val: &str) {
-        println!("{:#?}", self.labels);
         let addr = self.labels[val] - 1;
         self.stack.push(Operand::Address(addr));
     }
@@ -607,6 +603,5 @@ pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     }
 
     println!();
-
     Ok(())
 }

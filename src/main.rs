@@ -99,7 +99,6 @@ fn main() {
         Mode::Running
     };
 
-
     // There is a file argument
     if let Some(file) = matches.value_of("input") {
         // There are errors running the vm
