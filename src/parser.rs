@@ -167,7 +167,7 @@ mod parser_impl {
                     let h = head.chain_err(|| {
                         let i = self.input();
                         let (line, col) = i.line_col(a.start);
-                        format!("Instruction '{}' at line({}), col({:?})", i.slice(a.start, a.end), line, col)
+                        format!("Instruction '{}' at line({}), col({})", i.slice(a.start, a.end), line, col)
                     })?;
                     t.insert(0, h);
                     Ok(t)
@@ -183,9 +183,9 @@ mod parser_impl {
                 (_: pushs, _: string, &s: inner_string) => Ok(Instr(ins::Pushs(s.to_string()))),
                 (_: err, _: string, &s: inner_string) => Ok(Instr(ins::Err(s.to_string()))),
 
-                (_:jump, &id: ident) => Ok(Instr(ins::Jump(id.to_string()))),
-                (_:jz, &id: ident) => Ok(Instr(ins::Jz(id.to_string()))),
-                (_:pusha, &id: ident) => Ok(Instr(ins::Pusha(id.to_string()))),
+                (_: jump, &id: ident) => Ok(Instr(ins::Jump(id.to_string()))),
+                (_: jz, &id: ident) => Ok(Instr(ins::Jz(id.to_string()))),
+                (_: pusha, &id: ident) => Ok(Instr(ins::Pusha(id.to_string()))),
 
                 (_: instr_atom, res: atom()) => res,
                 (_: instr_int, res: int()) => res,
@@ -197,6 +197,7 @@ mod parser_impl {
                 (_: storeg, &i: integer) => Ok(Instr(ins::Storeg(i.parse().chain_err(|| "value is not a positive integer")?))),
                 (_: pushi, &i: integer) => Ok(Instr(ins::Pushi(i.parse().chain_err(|| "value is not a integer")?))),
                 (_: pushn, &i: integer) => Ok(Instr(ins::Pushn(i.parse().chain_err(|| "value is not a integer")?))),
+                () => Err("Not Implemented".into()),
             }
 
             atom(&self) -> Result<LInstruction> {
@@ -227,6 +228,7 @@ mod parser_impl {
                 (_: start) => Ok(Instr(ins::Start)),
                 (_: nop) => Ok(Instr(ins::Nop)),
                 (_: stop) => Ok(Instr(ins::Stop)),
+                () => Err("Not Implemented".into()),
             }
         }
     }
@@ -240,7 +242,7 @@ mod parser_impl {
         if !parser.end() {
             let (r, pos) = parser.expected();
             let (line, col) = parser.input().line_col(pos);
-            bail!("line({}), col({:?}) => expected rules: {:?}", line, col, r);
+            bail!("line({}), col({}) => expected rules: {:?}", line, col, r);
         }
 
         let labeled_instrs = parser.compute()?;
