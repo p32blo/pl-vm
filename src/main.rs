@@ -13,6 +13,11 @@
 //! ```
 //!
 
+#![recursion_limit="512"]
+
+#[macro_use]
+extern crate pest;
+
 #[macro_use]
 extern crate error_chain;
 extern crate ansi_term;
@@ -21,6 +26,7 @@ extern crate clap;
 mod vm;
 mod instructions;
 mod commands;
+mod parser;
 
 use vm::Mode;
 use clap::{App, Arg};
@@ -78,6 +84,7 @@ mod errors {
 }
 
 fn main() {
+
     let matches = App::new("pl-vm")
         .about("A simple vm with debug support")
         .version(env!("CARGO_PKG_VERSION"))

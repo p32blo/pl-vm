@@ -283,26 +283,26 @@ All identifiers that are instructions (see syntax below) are reserved and are ca
 
 Every program follows the following syntax:
 
-	<code> ::= <instr>*
-	
-	<instr> ::= <ident> :
-	          | <instr_atom>
-	          | <instr_int> <integer>
-	          | pushf <float>
-	          | (pushs | err) <string>
-	          | check <integer> , <integer>
-	          | (jump | jz | pusha) <ident>
-			  
-	<instr_atom> ::= padd | add | sub | mul | div | mod | not | inf | infeq | sup
-	               | supeq | fadd | fsub | fmul | fdiv | fcos | fsin
-	               | finf | finfeq | fsup | fsupeq | concat | equal | atoi | atof
-	               | itof | ftoi | stri | strf
-	               | pushsp | pushfp | pushgp | loadn | storen | swap
-	               | writei | writef | writes | read | call | return
-	               | drawpoint | drawline | drawcircle
-	               | cleardrawingarea | opendrawingarea | setcolor | refresh
-	               | start | nop | stop | allocn | free | dupn | popn
-				   
-	<instr_int> ::= pushi | pushn | pushg | pushl | load
-	              | dup | pop | storel | storeg | alloc
-				   
+    <code> ::= <instr>*
+    
+    <instr> ::= <ident> :
+              | <instr_atom>
+              | <instr_int> <integer>
+              | pushf <float>
+              | (pushs | err) <string>
+              | check <integer> , <integer>
+              | (jump | jz | pusha) <ident>
+
+    <instr_atom> ::= padd | add | sub | mul | div | mod | not | infeq | inf | supeq
+                   | sup | fadd | fsub | fmul | fdiv | fcos | fsin
+                   | finfeq | finf | fsupeq | fsup | concat | equal | atoi | atof
+                   | itof | ftoi | stri | strf
+                   | pushsp | pushfp | pushgp | loadn | storen | swap
+                   | writei | writef | writes | read | call | return
+                   | drawpoint | drawline | drawcircle
+                   | cleardrawingarea | opendrawingarea | setcolor | refresh
+                   | start | nop | stop | allocn | free | dupn | popn
+
+    <instr_int> ::= pushi | pushn | pushg | pushl | load
+                  | dup | pop | storel | storeg | alloc
+

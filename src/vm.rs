@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use errors;
 use errors::*;
 
+use parser;
 use instructions::Instruction;
 use commands::{Command, Status};
 
@@ -153,51 +154,17 @@ impl Machine {
         f.read_to_string(&mut buffer)
             .chain_err(|| format!("Unable to Read file '{}'", path.as_ref().display()))?;
 
-        // Strip comments and remove empty lines
-        let code_labels: Vec<String> = buffer
-            .lines()
-            .map(|x| Self::strip_comments(&x.trim().to_lowercase()))
-            .filter(|x| !x.is_empty())
-            .collect();
+        // Parse the file
+        let (code, labels) = parser::parse(&buffer)
+            .chain_err(|| {
+                           ErrorKind::Anomaly(format!("Unable to Parse file '{}'",
+                                                      path.as_ref().display()))
+                       })?;
 
-        // inserted labels so far
-        let mut acc = 0;
+        self.code = code;
+        self.labels = labels;
 
-        self.labels.clear();
-        // insert labels with the correct pointer
-        for (i, line) in code_labels.iter().enumerate() {
-            if let Some(val) = Self::is_label(line) {
-                self.labels.insert(val, i - acc);
-                acc += 1;
-            }
-        }
-
-        self.code.clear();
-        // remove labels from code
-        for instr in code_labels
-                .iter()
-                .filter(|line| Self::is_label(line).is_none()) {
-
-
-            self.code
-                .push(instr
-                          .parse()
-                          .chain_err(|| {
-                                         ErrorKind::Anomaly(format!("'{}' -> Failed to parse '{}'",
-                                                                    path.as_ref().display(),
-                                                                    instr))
-                                     })?);
-        }
         Ok(())
-    }
-
-    fn is_label(line: &str) -> Option<String> {
-        let mut inst = line.to_string();
-        if inst.ends_with(':') {
-            inst.pop().unwrap();
-            return Some(inst);
-        }
-        None
     }
 
     fn sp(&self) -> usize {
@@ -389,16 +356,6 @@ impl Machine {
         self.pc += 1;
 
         Ok(Status::Success)
-    }
-
-    fn strip_comments(inst: &str) -> String {
-        match inst.find("//") {
-            None => inst.to_string(),
-            Some(f) => {
-                let (inst, _) = inst.split_at(f);
-                inst.trim().to_string()
-            }
-        }
     }
 
     fn get_instruction(&self) -> Instruction {
@@ -623,10 +580,12 @@ pub fn start<P: AsRef<Path>>(path: P, mode: Mode) -> Result<()> {
     let mut m = Machine::new();
     m.load(&path)?;
     // println!("{:#?}", m);
+
     match mode {
         Mode::Running => m.run()?,
         Mode::Debug => m.run_debug()?,
     }
 
+    println!();
     Ok(())
 }
