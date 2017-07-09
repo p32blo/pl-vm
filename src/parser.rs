@@ -130,7 +130,6 @@ mod parser_impl {
             sp = _{ [" "] | ["\t"] }
             nl = _{ ["\n"] | ["\r"] }
             ws = _{ sp | nl }
-            
 
             // Grammar Rules
             //code = _{ soi ~ ws* ~ instr? ~ ws+ ~ (instr)* ~ ws* ~ eoi }
@@ -317,8 +316,8 @@ mod parser {
     test!(comment_two_l, "// test\n// test");
     test!(comments_before, "// test\nstart\nstop", [ins::Start, ins::Stop]);
     test!(comments_between, "start\n// test\nstop", [ins::Start, ins::Stop]);
-    test!(comments_after, "start\nstop\n// test", [ins::Start, ins::Stop]);   
-    test!(comments_both, "// test\nstart\nstop\n// test", [ins::Start, ins::Stop]);   
+    test!(comments_after, "start\nstop\n// test", [ins::Start, ins::Stop]);
+    test!(comments_both, "// test\nstart\nstop\n// test", [ins::Start, ins::Stop]);
     test!(instruction_single, "start", [ins::Start]);
     test!(instruction_nl_before, "\nstart", [ins::Start]);
     test!(instruction_nl_after, "start\n", [ins::Start]);
@@ -327,9 +326,10 @@ mod parser {
     test_fail!(sep_ins, "startstop", [ins::Start, ins::Stop]);
     test_fail!(sep_ins_sp, "start stop", [ins::Start, ins::Stop]);
     test!(sep_ins_nl, "start\nstop", [ins::Start, ins::Stop]);
+    test!(upper_case, "START\nSTOP", [ins::Start, ins::Stop]);
     test_fail!(sep_arg_g, "pushg1", [ins::Pushg(1)]);
     test_fail!(sep_arg_g_neg, "pushg -1");
-    test_fail!(sep_arg_i, "pushi2", [ins::Pushi(2)]); 
-    test!(sep_arg_i_sp_pos, "pushi 2", [ins::Pushi(2)]); 
-    test!(sep_arg_i_sp_neg, "pushi -2", [ins::Pushi(-2)]); 
+    test_fail!(sep_arg_i, "pushi2", [ins::Pushi(2)]);
+    test!(sep_arg_i_sp_pos, "pushi 2", [ins::Pushi(2)]);
+    test!(sep_arg_i_sp_neg, "pushi -2", [ins::Pushi(-2)]);
 }

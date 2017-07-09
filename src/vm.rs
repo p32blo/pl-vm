@@ -132,7 +132,7 @@ struct Machine {
     call_stack: Vec<(usize, usize)>,
     /// Code
     code: Vec<Instruction>,
-    /// String stack
+    /// String Stack
     strings: Vec<String>,
     /// Label Map
     labels: HashMap<String, usize>,
