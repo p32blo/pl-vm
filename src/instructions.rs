@@ -6,7 +6,7 @@ extern crate unescape;
 use std::fmt;
 
 /// Possible `vm` instructions
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Instruction {
     Pushi(i32),
     Pushn(i32),

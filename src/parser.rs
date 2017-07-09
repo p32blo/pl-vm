@@ -127,10 +127,14 @@ mod parser_impl {
             jz = {[i"jz"]}
             pusha = {[i"pusha"]}
 
-            sp = _{ ( [" "] | ["\t"] ) }
+            sp = _{ [" "] | ["\t"] }
+            nl = _{ ["\n"] | ["\r"] }
+            ws = _{ sp | nl }
+            
 
             // Grammar Rules
-            code = _{ soi ~ (instr)* ~ eoi }
+            //code = _{ soi ~ ws* ~ instr? ~ ws+ ~ (instr)* ~ ws* ~ eoi }
+            code = _{ soi ~ ws* ~ (instr ~ (ws+ ~ instr)*)? ~ ws* ~ eoi }
 
             instr = @{
                 ident ~ sp* ~ [":"]
@@ -156,8 +160,7 @@ mod parser_impl {
                 pushi | pushn | pushg | pushl | load
                 | dup | pop | storel | storeg | alloc
             }
-            comment = _{ ["//"] ~ (!["\n"] ~ any)* ~ (["\n"] | eoi) }
-            whitespace = _{ sp | ["\n"] | ["\r"] }
+            comment = _{ ["//"] ~ (!nl ~ any)* ~ (nl | eoi) }
         }
 
         process! {
@@ -265,4 +268,66 @@ mod parser_impl {
 
         Ok((code, labels))
     }
+}
+
+#[cfg(test)]
+mod parser {
+    use super::parser_impl::parse;
+    use instructions::Instruction as ins;
+    use std::collections::HashMap;
+
+    macro_rules! test_impl {
+        ($func: ident, $input: expr, $instr: expr, $labels: expr) => (
+            #[test]
+            fn $func() {
+                let (instr, labels) = parse($input).unwrap();
+                assert_eq!(instr, $instr);
+                assert_eq!(labels, $labels);
+            }
+        );
+        ($attr: meta, $func: ident, $input: expr, $instr: expr, $labels: expr) => (
+            #[$attr]
+            #[test]
+            fn $func() {
+                let (instr, labels) = parse($input).unwrap();
+                assert_eq!(instr, $instr);
+                assert_eq!(labels, $labels);
+            }
+        );
+    }
+
+    macro_rules! test {
+        ($func: ident, $input: expr) => (test_impl!($func, $input, [], HashMap::new()););
+        ($func: ident, $input: expr, $instr: expr) => (test_impl!($func, $input, $instr, HashMap::new()););
+        ($func: ident, $input: expr, $instr: expr, $labels: expr) => (test_impl!($func, $input, $instr, $labels););
+    }
+
+    macro_rules! test_fail {
+        ($func: ident, $input: expr) => (test_impl!(should_panic, $func, $input, [], HashMap::new()););
+        ($func: ident, $input: expr, $instr: expr) => (test_impl!(should_panic, $func, $input, $instr, HashMap::new()););
+        ($func: ident, $input: expr, $instr: expr, $labels: expr) => (should_panic, test_impl!($func, $input, $instr, $labels););
+    }
+
+    test!(empty, "");
+    test!(comment_single, "// test");
+    test!(comment_single_before, "\n// test");
+    test!(comment_single_after, "// test\n");
+    test!(comment_single_both, "\n// test\n");
+    test!(comment_two, "// test\n// test");
+    test!(comment_two_l, "// test\n// test");
+    test!(comments_before, "// test\nstart\nstop", [ins::Start, ins::Stop]);
+    test!(comments_between, "start\n// test\nstop", [ins::Start, ins::Stop]);
+    test!(comments_after, "start\nstop\n// test", [ins::Start, ins::Stop]);   
+    test!(comments_both, "// test\nstart\nstop\n// test", [ins::Start, ins::Stop]);   
+    test!(instruction_single, "start", [ins::Start]);
+    test!(instruction_nl_before, "\nstart", [ins::Start]);
+    test!(instruction_nl_after, "start\n", [ins::Start]);
+    test!(instruction_nl_both, "\nstart\n", [ins::Start]);
+
+    test_fail!(sep_ins, "startstop", [ins::Start, ins::Stop]);
+    test_fail!(sep_arg_g, "pushg1", [ins::Pushg(1)]);
+    test_fail!(sep_arg_g_neg, "pushg -1");
+    test_fail!(sep_arg_i, "pushi2", [ins::Pushi(2)]); 
+    test!(sep_arg_i_sp_pos, "pushi 2", [ins::Pushi(2)]); 
+    test!(sep_arg_i_sp_neg, "pushi -2", [ins::Pushi(-2)]); 
 }
