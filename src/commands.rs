@@ -47,7 +47,7 @@ impl Command {
         for &(cmd, msg) in &help {
             println!("\t{:20}{}", cmd, msg);
         }
-        println!("")
+        println!()
     }
 }
 

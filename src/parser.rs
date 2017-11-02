@@ -17,9 +17,9 @@ mod parser_impl {
         Label(String),
     }
 
-    impl LInstruction {
-        pub fn to_instr(self) -> Option<Instruction> {
-            match self {
+    impl From<LInstruction> for Option<Instruction> {
+        fn from(inst: LInstruction) -> Self {
+            match inst {
                 Label(..) => None,
                 Instr(i) => Some(i),
             }
@@ -262,7 +262,7 @@ mod parser_impl {
         // remove labels from code
         let code = labeled_instrs
             .into_iter()
-            .filter_map(|x| x.to_instr())
+            .filter_map(|x| x.into())
             .collect();
 
         Ok((code, labels))
