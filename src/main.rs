@@ -1,4 +1,3 @@
-
 //! A simple `vm` with debug support
 //!
 //! Executing the `vm`:
@@ -13,15 +12,15 @@
 //! ```
 //!
 
-#![recursion_limit="512"]
+#![recursion_limit = "512"]
 
 #[macro_use]
 extern crate pest;
 
-#[macro_use]
-extern crate error_chain;
 extern crate ansi_term;
 extern crate clap;
+#[macro_use]
+extern crate error_chain;
 
 mod vm;
 mod instructions;
@@ -42,11 +41,13 @@ mod errors {
             IllegalOperand (s: String) {
                 display("{} {}", Red.paint("Illegal Operand:"), s)
             }
-            /// Triggered for access to an illegal area of the code, stack, or one of two heaps
+            /// Triggered for access to an illegal area of the code,
+            /// stack, or one of two heaps
             SegmentationFault (s: String) {
                 display("{} {}", Red.paint("Segmentation Fault:"), s)
             }
-            /// Triggered for any attempt to add to the top of a full stack (execution stack or call stack)
+            /// Triggered for any attempt to add to the top of
+            /// a full stack (execution stack or call stack)
             StackOverflow {
                 display("{}", Red.paint("Stack Overflow"))
             }
@@ -84,7 +85,6 @@ mod errors {
 }
 
 fn main() {
-
     let matches = App::new("pl-vm")
         .about("A simple vm with debug support")
         .version(env!("CARGO_PKG_VERSION"))

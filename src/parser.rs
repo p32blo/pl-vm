@@ -1,4 +1,3 @@
-
 pub use self::parser_impl::parse;
 
 mod parser_impl {
@@ -34,7 +33,9 @@ mod parser_impl {
             ident = @{ ( alpha | ["_"] ) ~ ( alpha | digit | ["_"] | ["'"] )* }
 
             integer = @{ ["-"]? ~ digit+}
-            float = @{ ["-"]? ~ digit+ ~ (["."] ~ digit*)? ~ ((["e"]|["E"]) ~ (["+"]|["-"])? ~ digit+)? }
+            float = @{
+                ["-"]? ~ digit+ ~ (["."] ~ digit*)? ~ ((["e"]|["E"]) ~ (["+"]|["-"])? ~ digit+)?
+            }
 
             string = @{ ["\""] ~ inner_string ~ ["\""] }
             inner_string = { (["\\\""]|!["\""] ~ any)* }
@@ -169,7 +170,12 @@ mod parser_impl {
                     let h = head.chain_err(|| {
                         let i = self.input();
                         let (line, col) = i.line_col(a.start);
-                        format!("Instruction '{}' at line({}), col({})", i.slice(a.start, a.end), line, col)
+                        format!(
+                            "Instruction '{}' at line({}), col({})",
+                            i.slice(a.start, a.end),
+                            line,
+                            col
+                        )
                     })?;
                     t.insert(0, h);
                     Ok(t)
@@ -195,10 +201,18 @@ mod parser_impl {
             }
 
             int(&self) -> Result<LInstruction> {
-                (_: pushg, &i: integer) => Ok(Instr(ins::Pushg(i.parse().chain_err(|| "value is not a positive integer")?))),
-                (_: storeg, &i: integer) => Ok(Instr(ins::Storeg(i.parse().chain_err(|| "value is not a positive integer")?))),
-                (_: pushi, &i: integer) => Ok(Instr(ins::Pushi(i.parse().chain_err(|| "value is not a integer")?))),
-                (_: pushn, &i: integer) => Ok(Instr(ins::Pushn(i.parse().chain_err(|| "value is not a integer")?))),
+                (_: pushg, &i: integer) => Ok(Instr(ins::Pushg(
+                        i.parse().chain_err(|| "value is not a positive integer")?
+                    ))),
+                (_: storeg, &i: integer) => Ok(Instr(ins::Storeg(
+                        i.parse().chain_err(|| "value is not a positive integer")?
+                    ))),
+                (_: pushi, &i: integer) => Ok(Instr(ins::Pushi(
+                        i.parse().chain_err(|| "value is not a integer")?
+                    ))),
+                (_: pushn, &i: integer) =>Ok(Instr(ins::Pushn(
+                        i.parse().chain_err(|| "value is not a integer")?
+                    ))),
                 () => Err("Not Implemented".into()),
             }
 
@@ -236,7 +250,6 @@ mod parser_impl {
     }
 
     pub fn parse(input: &str) -> Result<(Vec<Instruction>, HashMap<String, usize>)> {
-
         let mut parser = Rdp::new(StringInput::new(input));
 
         parser.code();
@@ -296,15 +309,21 @@ mod parser {
     }
 
     macro_rules! test {
-        ($func: ident, $input: expr) => (test_impl!($func, $input, [], HashMap::new()););
-        ($func: ident, $input: expr, $instr: expr) => (test_impl!($func, $input, $instr, HashMap::new()););
-        ($func: ident, $input: expr, $instr: expr, $labels: expr) => (test_impl!($func, $input, $instr, $labels););
+        ($func: ident, $input: expr) =>
+            (test_impl!($func, $input, [], HashMap::new()););
+        ($func: ident, $input: expr, $instr: expr) =>
+            (test_impl!($func, $input, $instr, HashMap::new()););
+        ($func: ident, $input: expr, $instr: expr, $labels: expr) =>
+            (test_impl!($func, $input, $instr, $labels););
     }
 
     macro_rules! test_fail {
-        ($func: ident, $input: expr) => (test_impl!(should_panic, $func, $input, [], HashMap::new()););
-        ($func: ident, $input: expr, $instr: expr) => (test_impl!(should_panic, $func, $input, $instr, HashMap::new()););
-        ($func: ident, $input: expr, $instr: expr, $labels: expr) => (should_panic, test_impl!($func, $input, $instr, $labels););
+        ($func: ident, $input: expr) =>
+            (test_impl!(should_panic, $func, $input, [], HashMap::new()););
+        ($func: ident, $input: expr, $instr: expr) =>
+            (test_impl!(should_panic, $func, $input, $instr, HashMap::new()););
+        ($func: ident, $input: expr, $instr: expr, $labels: expr) =>
+            (should_panic, test_impl!($func, $input, $instr, $labels););
     }
 
     test!(empty, "");
@@ -314,10 +333,26 @@ mod parser {
     test!(comment_single_both, "\n// test\n");
     test!(comment_two, "// test\n// test");
     test!(comment_two_l, "// test\n// test");
-    test!(comments_before, "// test\nstart\nstop", [ins::Start, ins::Stop]);
-    test!(comments_between, "start\n// test\nstop", [ins::Start, ins::Stop]);
-    test!(comments_after, "start\nstop\n// test", [ins::Start, ins::Stop]);
-    test!(comments_both, "// test\nstart\nstop\n// test", [ins::Start, ins::Stop]);
+    test!(
+        comments_before,
+        "// test\nstart\nstop",
+        [ins::Start, ins::Stop]
+    );
+    test!(
+        comments_between,
+        "start\n// test\nstop",
+        [ins::Start, ins::Stop]
+    );
+    test!(
+        comments_after,
+        "start\nstop\n// test",
+        [ins::Start, ins::Stop]
+    );
+    test!(
+        comments_both,
+        "// test\nstart\nstop\n// test",
+        [ins::Start, ins::Stop]
+    );
     test!(instruction_single, "start", [ins::Start]);
     test!(instruction_nl_before, "\nstart", [ins::Start]);
     test!(instruction_nl_after, "start\n", [ins::Start]);
