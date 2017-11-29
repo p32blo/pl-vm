@@ -209,8 +209,8 @@ impl Machine {
         buf.parse()
     }
 
-    fn debug(&mut self, cmd: Command, status: Status) -> Result<Status> {
-        match cmd {
+    fn debug(&mut self, cmd: &Command, status: Status) -> Result<Status> {
+        match *cmd {
             Command::PrintCode => {
                 println!("\t/// CODE ///");
                 for (i, line) in self.code.iter().enumerate() {
@@ -316,7 +316,7 @@ impl Machine {
                 errors::print_errs(e);
                 Command::Empty
             });
-            status = self.debug(cmd, status).unwrap_or_else(|ref e| {
+            status = self.debug(&cmd, status).unwrap_or_else(|ref e| {
                 errors::print_errors(e);
                 Status::Exit
             });
