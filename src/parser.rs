@@ -133,8 +133,7 @@ mod parser_impl {
             ws = _{ sp | nl }
 
             // Grammar Rules
-            //code = _{ soi ~ ws* ~ instr? ~ ws+ ~ (instr)* ~ ws* ~ eoi }
-            code = _{ soi ~ ws* ~ instr? ~ sp* ~ (nl+ ~ ws* ~ instr)* ~ ws* ~ eoi }
+            code = _{ soi ~ ws* ~ instr? ~ (sp* ~ nl ~ ws* ~ instr)* ~ ws* ~ eoi }
 
             instr = @{
                 ident ~ sp* ~ [":"]
@@ -160,7 +159,7 @@ mod parser_impl {
                 pushi | pushn | pushg | pushl | load
                 | dup | pop | storel | storeg | alloc
             }
-            comment = _{ ["//"] ~ (!nl ~ any)* ~ (nl | eoi) }
+            comment = _{ ["//"] ~ (!nl ~ any)* }
         }
 
         process! {
@@ -351,6 +350,11 @@ mod parser {
     test!(
         comments_both,
         "// test\nstart\nstop\n// test",
+        [ins::Start, ins::Stop]
+    );
+    test!(
+        comments_between_nl,
+        "start// test\nstop",
         [ins::Start, ins::Stop]
     );
     test!(instruction_single, "start", [ins::Start]);
