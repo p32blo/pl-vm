@@ -1,7 +1,5 @@
 //! Instruction parsing and printing
 
-extern crate unescape;
-
 use std::fmt;
 
 /// Possible `vm` instructions

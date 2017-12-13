@@ -48,18 +48,20 @@ impl Operand {
                 Ok(Operand::Address((a as i32 + n) as usize))
             }
             (Operand::Integer(n), Operand::Integer(a)) => Ok(Operand::Integer(n + a)),
-            _ => bail!(ErrorKind::IllegalOperand(
-                format!("Operand::add => {} + {}", n, a)
-            )),
+            _ => bail!(ErrorKind::IllegalOperand(format!(
+                "Operand::add => {} + {}",
+                n, a
+            ))),
         }
     }
 
     fn mul(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(m * n)),
-            _ => bail!(ErrorKind::IllegalOperand(
-                format!("Operand::mul => {} * {}", m, n)
-            )),
+            _ => bail!(ErrorKind::IllegalOperand(format!(
+                "Operand::mul => {} * {}",
+                m, n
+            ))),
         }
     }
 
@@ -67,18 +69,20 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(0), _) => bail!(ErrorKind::DivisionByZero),
             (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(m / n)),
-            _ => bail!(ErrorKind::IllegalOperand(
-                format!("Operand::div => {} / {}", m, n)
-            )),
+            _ => bail!(ErrorKind::IllegalOperand(format!(
+                "Operand::div => {} / {}",
+                m, n
+            ))),
         }
     }
 
     fn module(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(m % n)),
-            _ => bail!(ErrorKind::IllegalOperand(
-                format!("Operand::mod => {} % {}", m, n)
-            )),
+            _ => bail!(ErrorKind::IllegalOperand(format!(
+                "Operand::mod => {} % {}",
+                m, n
+            ))),
         }
     }
 
@@ -86,9 +90,10 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if n == m => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => bail!(ErrorKind::IllegalOperand(
-                format!("Operand::equal => {} == {}", m, n)
-            )),
+            _ => bail!(ErrorKind::IllegalOperand(format!(
+                "Operand::equal => {} == {}",
+                m, n
+            ))),
         }
     }
 
@@ -96,9 +101,10 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m < n => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => bail!(ErrorKind::IllegalOperand(
-                format!("Operand::inf => {} < {}", m, n)
-            )),
+            _ => bail!(ErrorKind::IllegalOperand(format!(
+                "Operand::inf => {} < {}",
+                m, n
+            ))),
         }
     }
 
@@ -106,9 +112,10 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m <= n => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => bail!(ErrorKind::IllegalOperand(
-                format!("Operand::infeq => {} <= {}", m, n)
-            )),
+            _ => bail!(ErrorKind::IllegalOperand(format!(
+                "Operand::infeq => {} <= {}",
+                m, n
+            ))),
         }
     }
 
@@ -116,9 +123,10 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m > n => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => bail!(ErrorKind::IllegalOperand(
-                format!("Operand::sup => {} > {}", m, n)
-            )),
+            _ => bail!(ErrorKind::IllegalOperand(format!(
+                "Operand::sup => {} > {}",
+                m, n
+            ))),
         }
     }
 
@@ -126,9 +134,10 @@ impl Operand {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) if m >= n => Ok(Operand::Integer(1)),
             (Operand::Integer(..), Operand::Integer(..)) => Ok(Operand::Integer(0)),
-            _ => bail!(ErrorKind::IllegalOperand(
-                format!("Operand::supeq => {} >= {}", m, n)
-            )),
+            _ => bail!(ErrorKind::IllegalOperand(format!(
+                "Operand::supeq => {} >= {}",
+                m, n
+            ))),
         }
     }
 }
@@ -161,15 +170,13 @@ impl Machine {
 
     fn load<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
         // Open file
-        let mut f = File::open(&path).chain_err(|| {
-            format!("Failed to open file '{}'", path.as_ref().display())
-        })?;
+        let mut f = File::open(&path)
+            .chain_err(|| format!("Failed to open file '{}'", path.as_ref().display()))?;
 
         // Load file to memory
         let mut buffer = String::new();
-        f.read_to_string(&mut buffer).chain_err(|| {
-            format!("Unable to Read file '{}'", path.as_ref().display())
-        })?;
+        f.read_to_string(&mut buffer)
+            .chain_err(|| format!("Unable to Read file '{}'", path.as_ref().display()))?;
 
         // Parse the file
         let (code, labels) = parser::parse(&buffer).chain_err(|| {
@@ -190,15 +197,15 @@ impl Machine {
     }
 
     fn stack_pop(&mut self) -> Result<Operand> {
-        self.stack.pop().ok_or_else(|| {
-            ErrorKind::SegmentationFault("Stack is empty".to_string()).into()
-        })
+        self.stack
+            .pop()
+            .ok_or_else(|| ErrorKind::SegmentationFault("Stack is empty".to_string()).into())
     }
 
     fn call_stack_pop(&mut self) -> Result<(usize, usize)> {
-        self.call_stack.pop().ok_or_else(|| {
-            ErrorKind::SegmentationFault("Call stack is empty".to_string()).into()
-        })
+        self.call_stack
+            .pop()
+            .ok_or_else(|| ErrorKind::SegmentationFault("Call stack is empty".to_string()).into())
     }
 
     fn readline(&self) -> Result<Command> {
@@ -266,7 +273,7 @@ impl Machine {
                 if let Status::Success = status {
                     let mut bk = self.clone();
                     for _ in 0..end {
-                        let instr = bk.get_instruction();
+                        let instr = bk.get_instruction()?;
                         println!("\t: {} :", instr);
                         instr.write_ln();
                         if let Status::Exit = bk.run_instruction(&instr)? {
@@ -279,7 +286,7 @@ impl Machine {
             Command::Step(end) => {
                 if let Status::Success = status {
                     for _ in 0..end {
-                        let instr = &self.get_instruction();
+                        let instr = &self.get_instruction()?;
                         println!("\t< {} >", instr);
                         let s = self.run_instruction(instr)?;
                         instr.write_ln();
@@ -300,8 +307,6 @@ impl Machine {
             Command::Empty => Ok(status),
         }
     }
-
-
 
     fn run_debug(&mut self) -> Result<()> {
         let mut status = Status::Success;
@@ -325,7 +330,7 @@ impl Machine {
 
     fn run(&mut self) -> Result<()> {
         loop {
-            let instr = self.get_instruction();
+            let instr = self.get_instruction()?;
             if let Status::Exit = self.run_instruction(&instr)? {
                 break;
             }
@@ -372,8 +377,11 @@ impl Machine {
         Ok(Status::Success)
     }
 
-    fn get_instruction(&self) -> Instruction {
-        self.code[self.pc].clone()
+    fn get_instruction(&self) -> Result<Instruction> {
+        self.code
+            .get(self.pc)
+            .cloned()
+            .ok_or_else(|| ErrorKind::SegmentationFault("Invalid PC counter".to_string()).into())
     }
 
     fn pushi(&mut self, val: i32) {
@@ -524,7 +532,6 @@ impl Machine {
         self.fp = fp;
         Ok(())
     }
-
 
     fn binary_op<F: FnOnce(Operand, Operand) -> Result<Operand>>(&mut self, op: F) -> Result<()> {
         let n = self.stack_pop()?;
