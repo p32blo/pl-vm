@@ -218,6 +218,7 @@ mod parser_impl {
             atom(&self) -> Result<LInstruction> {
                 (_: padd) => Ok(Instr(ins::Padd)),
                 (_: add) => Ok(Instr(ins::Add)),
+                (_: sub) => Ok(Instr(ins::Sub)),
                 (_: mul) => Ok(Instr(ins::Mul)),
                 (_: div) => Ok(Instr(ins::Div)),
                 (_: mod_) => Ok(Instr(ins::Mod)),

@@ -55,6 +55,30 @@ impl Operand {
         }
     }
 
+    fn sub(n: Self, a: Self) -> Result<Self> {
+        match (n, a) {
+            (Operand::Integer(n), Operand::Address(a)) => {
+                if n.is_negative() {
+                    bail!(ErrorKind::IllegalOperand(format!(
+                        "Operand::sub => {} - {}",
+                        n, a
+                    )))
+                }
+
+                let res = a.checked_sub(n as usize).ok_or_else(|| {
+                    ErrorKind::IllegalOperand(format!("Operand::sub => {} - {}", n, a))
+                });
+
+                Ok(Operand::Address(res?))
+            }
+            (Operand::Integer(n), Operand::Integer(a)) => Ok(Operand::Integer(n - a)),
+            _ => bail!(ErrorKind::IllegalOperand(format!(
+                "Operand::sub => {} - {}",
+                n, a
+            ))),
+        }
+    }
+
     fn mul(n: Self, m: Self) -> Result<Self> {
         match (n, m) {
             (Operand::Integer(n), Operand::Integer(m)) => Ok(Operand::Integer(m * n)),
@@ -358,6 +382,7 @@ impl Machine {
             Instruction::Atoi => self.atoi()?,
             Instruction::Padd => self.padd()?,
             Instruction::Add => self.add()?,
+            Instruction::Sub => self.sub()?,
             Instruction::Mul => self.mul()?,
             Instruction::Div => self.div()?,
             Instruction::Mod => self.module()?,
@@ -550,6 +575,10 @@ impl Machine {
 
     fn add(&mut self) -> Result<()> {
         self.binary_op(Operand::add)
+    }
+
+    fn sub(&mut self) -> Result<()> {
+        self.binary_op(Operand::sub)
     }
 
     fn mul(&mut self) -> Result<()> {
