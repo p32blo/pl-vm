@@ -70,7 +70,7 @@ The following sections documents all the instructions for `vm` while reporting i
 Instructions | Status | Description
 -------------|--------|------------
 ADD          | ✅      | Pop `n` then `m` which must be an integer and stack the result of `m + n`
-SUB          | ❌      | Pop `n` then `m` which must be an integer and stack the result of `m - n`
+SUB          | ✅      | Pop `n` then `m` which must be an integer and stack the result of `m - n`
 MUL          | ✅      | Pop `n` then `m` which must be an integer and stack the result of `m x n`
 DIV          | ✅      | Pop `n` then `m` which must be an integer and stack the result of `m / n`
 MOD          | ✅      | Pop `n` then `m` which must be an integer and stack the result of `m mod n`
